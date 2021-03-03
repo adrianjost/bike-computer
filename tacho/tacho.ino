@@ -9,6 +9,10 @@ Version: 1.0.0
 #define PIN_SDA 1
 #define PIN_SCK 3
 
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 32 // OLED display height, in pixels
+#define OLED_RESET     1 
+
 // config storage
 #define PATH_CONFIG_WIFI "/config.json"
 
@@ -26,11 +30,18 @@ Version: 1.0.0
 // OTA Updates
 #include <ArduinoOTA.h>
 
+// Display
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
 WiFiManager wm;
 
 FS* filesystem = &LittleFS;
 WebSocketsServer webSocket = WebSocketsServer(80);
 
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // JSON sizes https://arduinojson.org/v6/assistant/
 // { "hostname": "abcdef" }
@@ -289,6 +300,12 @@ void setup() {
   setupWifi();
   setupOTAUpdate();
   setupWebsocket();
+
+  Wire.begin(2,0);
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+  display.dim(true); // lower brightness
 }
 
 //*************************
@@ -298,4 +315,15 @@ void setup() {
 void loop() {
   ArduinoOTA.handle(); // listen for OTA Updates
   webSocket.loop(); // listen for websocket events
+  display.setTextSize(4);
+  display.setCursor(0, 3);
+  display.print(3);
+  display.print(1);
+  display.print(".");
+  display.print(8);
+  display.setCursor(102, 23);
+  display.setTextSize(1); // 7x10 chars
+  display.print("km/h");
+  display.display(); //you have to tell the display to...display
+  display.clearDisplay();
 }
