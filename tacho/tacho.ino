@@ -5,13 +5,26 @@ Version: 1.0.0
 
 // PIN DEFINITIONS
 // #define PIN_RESET 0 // comment out on boards without FLASH-button
-#define PIN_INPUT 3
+
+/* PIN COMPATIBILITY
+0               SCK
+1  IN     -SDA -SCK (has internal PULL-UP, in can only pull to GND)
+2          SDA
+3  IN               (can be pulled to VCC)
+
+*/
+
+#define PIN_SENSOR 3
+#define PIN_INPUT 1
 #define PIN_SDA 2
 #define PIN_SCK 0
 
+#define SENSOR_SIGNAL HIGH
+#define INPUT_PRESSED LOW
+
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
-#define OLED_RESET     1 
+#define OLED_RESET     1
 
 // config storage
 #define PATH_CONFIG_WIFI "/config.json"
@@ -295,6 +308,9 @@ void setup() {
   #ifdef PIN_INPUT
     pinMode(PIN_INPUT, INPUT);
   #endif
+  #ifdef PIN_SENSOR
+    pinMode(PIN_SENSOR, INPUT);
+  #endif
 
   setupFilesystem();
 
@@ -319,6 +335,8 @@ void setup() {
 // LOOP
 //*************************
 
+unsigned int sensorCount = 0;
+
 void showSpeed(float speed){
   byte base = speed;
 
@@ -339,11 +357,28 @@ void showSpeed(float speed){
   display.setCursor(102, 23);
   display.setTextSize(1); // 7x10 chars
   display.print("km/h");
+
+  #ifdef PIN_INPUT
+    if(digitalRead(PIN_INPUT) == INPUT_PRESSED){
+      sensorCount = 0;
+    }
+  #endif
+
+  #ifdef PIN_SENSOR
+    if(digitalRead(PIN_SENSOR) == SENSOR_SIGNAL){
+      sensorCount += 1;
+    }
+  #endif
+
+  display.setCursor(100, 3);
+  display.setTextSize(1);
+  display.print(sensorCount);
+
   display.display();
 }
 
 void loop() {
   ArduinoOTA.handle(); // listen for OTA Updates
   webSocket.loop(); // listen for websocket events
-  showSpeed((float)((millis() - loopStartTime) % 120000) / 1000); // count up demo
+  showSpeed((float)((millis() - loopStartTime) % 80000) / 750); // count up demo
 }
