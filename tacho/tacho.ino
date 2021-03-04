@@ -4,15 +4,6 @@ Version: 1.0.0
 **/
 
 // PIN DEFINITIONS
-// #define PIN_RESET 0 // comment out on boards without FLASH-button
-
-/* PIN COMPATIBILITY
-0               SCK
-1  IN     -SDA -SCK (has internal PULL-UP, in can only pull to GND)
-2          SDA
-3  IN               (can be pulled to VCC)
-
-*/
 
 #define PIN_SENSOR 3
 #define PIN_INPUT 1
