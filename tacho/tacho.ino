@@ -4,10 +4,10 @@ Version: 1.0.0
 **/
 
 // PIN DEFINITIONS
-#define PIN_RESET 0 // comment out on boards without FLASH-button
-#define PIN_INPUT 2
-#define PIN_SDA 1
-#define PIN_SCK 3
+// #define PIN_RESET 0 // comment out on boards without FLASH-button
+#define PIN_INPUT 3
+#define PIN_SDA 2
+#define PIN_SCK 0
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
@@ -31,10 +31,13 @@ Version: 1.0.0
 #include <ArduinoOTA.h>
 
 // Display
+// https://github.com/adafruit/Adafruit_SSD1306/blob/master/Adafruit_SSD1306.cpp
+// https://www.instructables.com/ESP8266-01-With-Multiple-I2C-Devices-Exploring-ESP/
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+
 
 WiFiManager wm;
 
@@ -279,6 +282,8 @@ void setupWebsocket(){
 // SETUP
 //*************************
 
+unsigned int loopStartTime;
+
 void setup() {
   #ifdef DEBUG
     Serial.begin(DEBUG_SPEED);
@@ -301,29 +306,44 @@ void setup() {
   setupOTAUpdate();
   setupWebsocket();
 
-  Wire.begin(2,0);
+  Wire.begin(PIN_SDA, PIN_SCK);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
   display.setTextColor(WHITE);
   display.dim(true); // lower brightness
+
+  loopStartTime = millis();
 }
 
 //*************************
 // LOOP
 //*************************
 
-void loop() {
-  ArduinoOTA.handle(); // listen for OTA Updates
-  webSocket.loop(); // listen for websocket events
+void showSpeed(float speed){
+  byte base = speed;
+
+  display.clearDisplay();
   display.setTextSize(4);
-  display.setCursor(0, 3);
-  display.print(3);
-  display.print(1);
-  display.print(".");
-  display.print(8);
+
+  if(base >= 100){
+    display.setCursor(24, 3);
+    display.print(base);
+  }else{
+    byte rest = ((byte)(speed * 10)) - (base * 10);
+    display.setCursor(base > 9 ? 0 : 24, 3);
+    display.print(base);
+    display.print(".");
+    display.print(rest);
+  }
+
   display.setCursor(102, 23);
   display.setTextSize(1); // 7x10 chars
   display.print("km/h");
-  display.display(); //you have to tell the display to...display
-  display.clearDisplay();
+  display.display();
+}
+
+void loop() {
+  ArduinoOTA.handle(); // listen for OTA Updates
+  webSocket.loop(); // listen for websocket events
+  showSpeed((float)((millis() - loopStartTime) % 120000) / 1000); // count up demo
 }
