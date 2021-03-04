@@ -35,8 +35,6 @@ Version: 1.0.0
 #include <ArduinoOTA.h>
 
 // Display
-// https://github.com/adafruit/Adafruit_SSD1306/blob/master/Adafruit_SSD1306.cpp
-// https://www.instructables.com/ESP8266-01-With-Multiple-I2C-Devices-Exploring-ESP/
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>

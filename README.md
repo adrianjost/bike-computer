@@ -14,3 +14,9 @@ Currently using ESP-01S but ESP-03 might be a bit better suited for the final PC
 |      3      | ✅  | ✅  |  ❌  | ❌  |                                                                                        |
 
 ![ESP8266-01 Pinout & Boot Modes](https://i.pinimg.com/originals/cf/7e/8d/cf7e8de45255400203f46996d8af9603.png)
+
+### Usefull Links / Tutorials
+
+https://lastminuteengineers.com/oled-display-arduino-tutorial/
+https://github.com/adafruit/Adafruit_SSD1306/blob/master/Adafruit_SSD1306.cpp
+https://www.instructables.com/ESP8266-01-With-Multiple-I2C-Devices-Exploring-ESP/
