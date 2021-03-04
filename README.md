@@ -2,6 +2,8 @@
 
 ## Development Notes
 
+Currently using ESP-01S but ESP-03 might be a bit better suited for the final PCB cause it is smaller and has more PINs available. However I couldn't find a seller yet.
+
 ### Pin Compatibility
 
 | Arduino Pin | IN  | OUT |  SDA | SCK | note                                                                                   |
