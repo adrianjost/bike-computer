@@ -6,12 +6,12 @@ Version: 1.0.0
 // PIN DEFINITIONS
 
 #define PIN_SENSOR 3
-#define PIN_INPUT 1
+#define PIN_BUTTON 1
 #define PIN_SDA 2
 #define PIN_SCK 0
 
 #define SENSOR_SIGNAL HIGH
-#define INPUT_PRESSED LOW
+#define BUTTON_PRESSED LOW
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
@@ -40,6 +40,8 @@ Version: 1.0.0
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
+// Date and time functions using a DS3231 RTC connected via I2C and Wire lib
+#include "RTClib.h"
 
 WiFiManager wm;
 
@@ -47,6 +49,7 @@ FS* filesystem = &LittleFS;
 WebSocketsServer webSocket = WebSocketsServer(80);
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+RTC_DS3231 rtc;
 
 // JSON sizes https://arduinojson.org/v6/assistant/
 // { "hostname": "abcdef" }
@@ -294,8 +297,8 @@ void setup() {
     Serial.println("STARTED IN DEBUG MODE");
   #endif
 
-  #ifdef PIN_INPUT
-    pinMode(PIN_INPUT, INPUT);
+  #ifdef PIN_BUTTON
+    pinMode(PIN_BUTTON, INPUT);
   #endif
   #ifdef PIN_SENSOR
     pinMode(PIN_SENSOR, INPUT);
@@ -317,12 +320,37 @@ void setup() {
   display.setTextColor(WHITE);
   display.dim(true); // lower brightness
 
+  if (! rtc.begin()) {
+    // Couldn't find RTC
+    display.clearDisplay();
+    display.setCursor(5, 12);
+    display.setTextSize(3);
+    display.print("NO RTC");
+    delay(1000);
+  }
+   if (rtc.lostPower()) {
+    Serial.println("RTC lost power, let's set the time!");
+    // When time needs to be set on a new device, or after a power loss, the
+    // following line sets the RTC to the date & time this sketch was compiled
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    // This line sets the RTC with an explicit date & time, for example to set
+    // January 21, 2014 at 3am you would call:
+    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+  }
+
   loopStartTime = millis();
 }
 
 //*************************
 // LOOP
 //*************************
+
+#define MENU_ITEMS 2
+void drawMenuPosition(byte position) {
+  byte width = SCREEN_WIDTH / MENU_ITEMS;
+  display.drawFastHLine(width * position, SCREEN_HEIGHT - 1, width, WHITE);
+  display.display();
+}
 
 unsigned int sensorCount = 0;
 
@@ -333,22 +361,22 @@ void showSpeed(float speed){
   display.setTextSize(4);
 
   if(base >= 100){
-    display.setCursor(24, 3);
+    display.setCursor(24, 0);
     display.print(base);
   }else{
     byte rest = ((byte)(speed * 10)) - (base * 10);
-    display.setCursor(base > 9 ? 0 : 24, 3);
+    display.setCursor(base > 9 ? 0 : 24, 0);
     display.print(base);
     display.print(".");
     display.print(rest);
   }
 
-  display.setCursor(102, 23);
-  display.setTextSize(1); // 7x10 chars
+  display.setCursor(102, 20);
+  display.setTextSize(1);
   display.print("km/h");
 
-  #ifdef PIN_INPUT
-    if(digitalRead(PIN_INPUT) == INPUT_PRESSED){
+  #ifdef PIN_BUTTON
+    if(digitalRead(PIN_BUTTON) == BUTTON_PRESSED){
       sensorCount = 0;
     }
   #endif
@@ -359,15 +387,70 @@ void showSpeed(float speed){
     }
   #endif
 
-  display.setCursor(100, 3);
+  display.setCursor(100, 0);
   display.setTextSize(1);
   display.print(sensorCount);
+
+  drawMenuPosition(0);
 
   display.display();
 }
 
+void showDateTime() {
+  DateTime now = rtc.now();
+
+  display.clearDisplay();
+  display.setCursor(2, 5);
+  display.setTextSize(3);
+
+  byte hour = now.hour();
+  if(hour < 10){
+    display.print("0");
+  }
+  display.print(hour);
+
+  display.print(":");
+
+  byte minute = now.minute();
+  if(minute < 10){
+    display.print("0");
+  }
+  display.print(minute);
+
+  display.setTextSize(2);
+  display.setCursor(102, 12);
+  byte second = now.second();
+  if(second < 10){
+    display.print("0");
+  }
+  display.print(second);
+  display.display();
+
+  drawMenuPosition(1);
+}
+
+byte menuItem = 0;
+
 void loop() {
   ArduinoOTA.handle(); // listen for OTA Updates
   webSocket.loop(); // listen for websocket events
-  showSpeed((float)((millis() - loopStartTime) % 80000) / 750); // count up demo
+
+  if(digitalRead(PIN_BUTTON) == BUTTON_PRESSED){
+    menuItem = (menuItem + 1) % MENU_ITEMS;
+    while(digitalRead(PIN_BUTTON) == BUTTON_PRESSED){
+      // do nothing
+    }
+  }
+
+  switch (menuItem) {
+    case 0:
+      showSpeed((float)((millis() - loopStartTime) % 80000) / 750);
+      break;
+    case 1:
+      showDateTime();
+      break;
+    default:
+      break;
+  }
+  
 }

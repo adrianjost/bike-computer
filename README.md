@@ -20,3 +20,4 @@ Currently using ESP-01S but ESP-03 might be a bit better suited for the final PC
 https://lastminuteengineers.com/oled-display-arduino-tutorial/
 https://github.com/adafruit/Adafruit_SSD1306/blob/master/Adafruit_SSD1306.cpp
 https://www.instructables.com/ESP8266-01-With-Multiple-I2C-Devices-Exploring-ESP/
+https://github.com/adafruit/RTClib
