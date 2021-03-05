@@ -349,7 +349,6 @@ void setup() {
 void drawMenuPosition(byte position) {
   byte width = SCREEN_WIDTH / MENU_ITEMS;
   display.drawFastHLine(width * position, SCREEN_HEIGHT - 1, width, WHITE);
-  display.display();
 }
 
 unsigned int sensorCount = 0;
@@ -431,9 +430,10 @@ void showDateTime() {
     display.print("0");
   }
   display.print(second);
-  display.display();
 
   drawMenuPosition(1);
+
+  display.display();
 }
 
 byte menuItem = 0;
