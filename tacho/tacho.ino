@@ -182,6 +182,8 @@ bool shouldEnterSetup(){
 }
 
 void setupWifi(){
+  WiFi.mode(WIFI_STA);
+
   wm.setDebugOutput(false);
   // close setup after 5min
   wm.setTimeout(300);
@@ -265,6 +267,36 @@ void setupOTAUpdate(){
   #endif
 }
 
+
+void setupDisplay(){
+  Wire.begin(PIN_SDA, PIN_SCK);
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+  display.dim(true); // lower brightness
+}
+
+void setupRTC(){
+  if (! rtc.begin()) {
+    // Couldn't find RTC
+    display.clearDisplay();
+    display.setCursor(5, 12);
+    display.setTextSize(3);
+    display.print("NO RTC");
+    display.display();
+    delay(1000);
+  }
+  if (rtc.lostPower()) {
+    Serial.println("RTC lost power, let's set the time!");
+    // When time needs to be set on a new device, or after a power loss, the
+    // following line sets the RTC to the date & time this sketch was compiled
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    // This line sets the RTC with an explicit date & time, for example to set
+    // January 21, 2014 at 3am you would call:
+    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+  }
+}
+
 //*************************
 // websocket communication
 //*************************
@@ -288,6 +320,7 @@ void setupWebsocket(){
 //*************************
 
 unsigned int loopStartTime;
+byte wifiActive = false;
 
 void setup() {
   #ifdef DEBUG
@@ -304,39 +337,38 @@ void setup() {
     pinMode(PIN_SENSOR, INPUT);
   #endif
 
+  setupDisplay();
+
   setupFilesystem();
 
   #ifdef DEBUG
     Serial.println("setupFilesystem finished");
   #endif
 
-  setupWifi();
-  setupOTAUpdate();
-  setupWebsocket();
+  setupRTC();
 
-  Wire.begin(PIN_SDA, PIN_SCK);
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
-  display.setTextColor(WHITE);
-  display.dim(true); // lower brightness
-
-  if (! rtc.begin()) {
-    // Couldn't find RTC
+  display.setCursor(0, 14);
+  display.setTextSize(2);
+  if(digitalRead(PIN_SENSOR) != SENSOR_SIGNAL){
+    wifiActive = true;
+    display.print("WiFi...");
+    display.display();
+    setupWifi();
+    setupOTAUpdate();
+    setupWebsocket();
     display.clearDisplay();
-    display.setCursor(5, 12);
-    display.setTextSize(3);
-    display.print("NO RTC");
-    delay(1000);
+    display.setCursor(0, 14);
+    display.print("WiFi UP");
+    display.display();
+  }else{
+    WiFi.mode(WIFI_OFF);
+    wifiActive = false;
+    display.print("WiFi DOWN");
+    display.display();
   }
-   if (rtc.lostPower()) {
-    Serial.println("RTC lost power, let's set the time!");
-    // When time needs to be set on a new device, or after a power loss, the
-    // following line sets the RTC to the date & time this sketch was compiled
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    // This line sets the RTC with an explicit date & time, for example to set
-    // January 21, 2014 at 3am you would call:
-    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-  }
+
+  delay(1000);
 
   loopStartTime = millis();
 }
@@ -439,8 +471,10 @@ void showDateTime() {
 byte menuItem = 0;
 
 void loop() {
-  ArduinoOTA.handle(); // listen for OTA Updates
-  webSocket.loop(); // listen for websocket events
+  if(wifiActive){
+    ArduinoOTA.handle(); // listen for OTA Updates
+    webSocket.loop(); // listen for websocket events
+  }
 
   if(digitalRead(PIN_BUTTON) == BUTTON_PRESSED){
     menuItem = (menuItem + 1) % MENU_ITEMS;
