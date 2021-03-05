@@ -396,7 +396,14 @@ void showSpeed(float speed){
   display.display();
 }
 
+unsigned int lastTimeUpdate = 0;
 void showDateTime() {
+  if(millis() - lastTimeUpdate < 1000){
+    // updating the screen every second is enough
+    return;
+  }
+
+  lastTimeUpdate = millis();
   DateTime now = rtc.now();
 
   display.clearDisplay();
