@@ -21,3 +21,6 @@ https://lastminuteengineers.com/oled-display-arduino-tutorial/
 https://github.com/adafruit/Adafruit_SSD1306/blob/master/Adafruit_SSD1306.cpp
 https://www.instructables.com/ESP8266-01-With-Multiple-I2C-Devices-Exploring-ESP/
 https://github.com/adafruit/RTClib
+[Power Modes](https://blog.creations.de/?p=149)
+[Power Consumption](https://bbs.espressif.com/viewtopic.php?t=133)
+[Low Power Demo](https://github.com/esp8266/Arduino/tree/master/libraries/esp8266/examples/LowPowerDemo)
