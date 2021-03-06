@@ -17,6 +17,8 @@ Version: 1.0.0
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
 #define OLED_RESET     1
 
+#define MENU_ITEMS 2
+
 // config storage
 #define PATH_CONFIG_WIFI "/config.json"
 
@@ -29,7 +31,6 @@ Version: 1.0.0
 // Website Communication
 #include <ESP8266WiFi.h>        // 1.0.0 - Ivan Grokhotkov
 #include <ArduinoJson.h>        // 6.16.1 - Benoit Blanchon
-#include <WebSocketsServer.h>   // 2.1.4 Markus Sattler
 
 // OTA Updates
 #include <ArduinoOTA.h>
@@ -43,10 +44,16 @@ Version: 1.0.0
 // Date and time functions using a DS3231 RTC connected via I2C and Wire lib
 #include "RTClib.h"
 
+// Low Power Sleep States
+extern "C" {
+  #include "user_interface.h"
+}
+
+
+
 WiFiManager wm;
 
 FS* filesystem = &LittleFS;
-WebSocketsServer webSocket = WebSocketsServer(80);
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 RTC_DS3231 rtc;
@@ -66,6 +73,45 @@ char wifiPassword[32] = "";
  INIT
 **********************************/
 
+volatile unsigned int sensorCount = 0;
+volatile unsigned int lastSensorInterrupt = 0;
+
+void ICACHE_RAM_ATTR handleSensorInterrupt();
+void handleSensorInterrupt() {
+  if(millis() - lastSensorInterrupt < 100){
+    return;
+  }
+  sensorCount++;
+  lastSensorInterrupt = millis();
+}
+
+volatile byte menuItem = 1;
+volatile unsigned int lastButtonInterrupt = 0;
+
+void ICACHE_RAM_ATTR handleButtonInterrupt();
+void handleButtonInterrupt() {
+  if(millis() - lastButtonInterrupt < 500){
+    return;
+  }
+  menuItem = (menuItem + 1) % MENU_ITEMS;
+  lastButtonInterrupt = millis();
+}
+
+unsigned int lastWakeUp = 0;
+bool shouldSleep = false;
+
+void forcedLightSleep() {
+  shouldSleep = true;
+  WiFi.mode(WIFI_OFF);  // you must turn the modem off; using disconnect won't work
+  wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
+  gpio_pin_wakeup_enable(PIN_SENSOR, GPIO_PIN_INTR_HILEVEL);
+  gpio_pin_wakeup_enable(PIN_BUTTON, GPIO_PIN_INTR_LOLEVEL);
+  // only LOLEVEL or HILEVEL interrupts work, no edge, that's an SDK or CPU limitation
+  // wifi_fpm_set_wakeup_cb(handleInterrupt); // Set wakeup callback (optional)
+  wifi_fpm_open();
+  wifi_fpm_do_sleep(0xFFFFFFF);  // only 0xFFFFFFF, any other value and it won't disconnect the RTC timer
+  delay(10);  // it goes to sleep during this delay() and waits for an interrupt
+}
 
 //*************************
 // config manager
@@ -298,24 +344,6 @@ void setupRTC(){
 }
 
 //*************************
-// websocket communication
-//*************************
-
-void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
-  switch(type) {
-    case WStype_TEXT:{
-      webSocket.sendTXT(num, payload, length);
-      break;
-    }
-  }
-}
-
-void setupWebsocket(){
-  webSocket.begin();
-  webSocket.onEvent(webSocketEvent);
-}
-
-//*************************
 // SETUP
 //*************************
 
@@ -350,25 +378,38 @@ void setup() {
   display.clearDisplay();
   display.setCursor(0, 14);
   display.setTextSize(2);
-  if(digitalRead(PIN_SENSOR) != SENSOR_SIGNAL){
-    wifiActive = true;
-    display.print("WiFi...");
-    display.display();
-    setupWifi();
-    setupOTAUpdate();
-    setupWebsocket();
-    display.clearDisplay();
-    display.setCursor(0, 14);
-    display.print("WiFi UP");
-    display.display();
-  }else{
+  #ifdef PIN_SENSOR
+    // WIFI stuff disabled during interrupt & sleep experiments
+    // need to be manually reenabled when woken up from light-sleep
+    if(false && digitalRead(PIN_SENSOR) != SENSOR_SIGNAL){
+      wifiActive = true;
+      display.print("WiFi...");
+      display.display();
+      setupWifi();
+      setupOTAUpdate();
+      display.clearDisplay();
+      display.setCursor(0, 14);
+      display.print("WiFi UP");
+      display.display();
+    }else{
+      WiFi.mode(WIFI_OFF);
+      WiFi.forceSleepBegin();
+      wifiActive = false;
+      display.print("WiFi DOWN");
+      display.display();
+    }
+  #else
     WiFi.mode(WIFI_OFF);
     wifiActive = false;
-    display.print("WiFi DOWN");
+    display.setTextSize(1);
+    display.print("NO WIFI MODE");
     display.display();
-  }
+  #endif
 
   delay(1000);
+
+  attachInterrupt(digitalPinToInterrupt(PIN_SENSOR), handleSensorInterrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(PIN_BUTTON), handleButtonInterrupt, FALLING);
 
   loopStartTime = millis();
 }
@@ -377,13 +418,10 @@ void setup() {
 // LOOP
 //*************************
 
-#define MENU_ITEMS 2
 void drawMenuPosition(byte position) {
   byte width = SCREEN_WIDTH / MENU_ITEMS;
   display.drawFastHLine(width * position, SCREEN_HEIGHT - 1, width, WHITE);
 }
-
-unsigned int sensorCount = 0;
 
 void showSpeed(float speed){
   byte base = speed;
@@ -405,18 +443,6 @@ void showSpeed(float speed){
   display.setCursor(102, 20);
   display.setTextSize(1);
   display.print("km/h");
-
-  #ifdef PIN_BUTTON
-    if(digitalRead(PIN_BUTTON) == BUTTON_PRESSED){
-      sensorCount = 0;
-    }
-  #endif
-
-  #ifdef PIN_SENSOR
-    if(digitalRead(PIN_SENSOR) == SENSOR_SIGNAL){
-      sensorCount += 1;
-    }
-  #endif
 
   display.setCursor(100, 0);
   display.setTextSize(1);
@@ -468,24 +494,37 @@ void showDateTime() {
   display.display();
 }
 
-byte menuItem = 0;
+void checkSensorReset() {
+  #ifdef PIN_BUTTON
+    if(digitalRead(PIN_BUTTON) != BUTTON_PRESSED){
+      return;
+    }
+    delay(500);
+    if(digitalRead(PIN_BUTTON) != BUTTON_PRESSED){
+      return;
+    }
+    sensorCount = 0;
+    while(digitalRead(PIN_BUTTON) == BUTTON_PRESSED){
+      // wait for release
+    }
+  #endif
+}
 
-void loop() {
-  if(wifiActive){
-    ArduinoOTA.handle(); // listen for OTA Updates
-    webSocket.loop(); // listen for websocket events
-  }
-
+void checkMenuSwitch(){
   if(digitalRead(PIN_BUTTON) == BUTTON_PRESSED){
     menuItem = (menuItem + 1) % MENU_ITEMS;
     while(digitalRead(PIN_BUTTON) == BUTTON_PRESSED){
       // do nothing
     }
   }
+}
 
+void updateScreen(){
   switch (menuItem) {
     case 0:
+      // checkSensorReset();
       showSpeed((float)((millis() - loopStartTime) % 80000) / 750);
+      // forcedLightSleep();
       break;
     case 1:
       showDateTime();
@@ -493,5 +532,21 @@ void loop() {
     default:
       break;
   }
-  
+}
+
+void loop() {
+  // if(shouldSleep && millis() - lastWakeUp < 1000){
+  //   only fully wake up after a max if 1000ms since going to sleep
+  //   forcedLightSleep();
+  // }else{
+  // lastWakeUp = millis();
+  // shouldSleep = false;
+  // if(wifiActive){
+  //   ArduinoOTA.handle(); // listen for OTA Updates
+  // }
+  // checkMenuSwitch();
+    updateScreen();
+    // forcedLightSleep();
+    delay(1000);
+  // }
 }

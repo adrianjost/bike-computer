@@ -24,3 +24,4 @@ https://github.com/adafruit/RTClib
 [Power Modes](https://blog.creations.de/?p=149)
 [Power Consumption](https://bbs.espressif.com/viewtopic.php?t=133)
 [Low Power Demo](https://github.com/esp8266/Arduino/tree/master/libraries/esp8266/examples/LowPowerDemo)
+[Sleep WakeUp Cause ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/sleep_modes.html#checking-sleep-wakeup-cause)
