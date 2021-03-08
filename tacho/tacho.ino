@@ -19,8 +19,9 @@ Version: 1.0.0
 #define WAKEUP_BUTTON GPIO_PIN_INTR_LOLEVEL
 
 // CHANGE, RISING, FALLING
-#define INTERRUPT_SENSOR RISING
-#define INTERRUPT_BUTTON RISING
+// using change to prevent misses due to sleep and prevent multiple calls with throttling
+#define INTERRUPT_SENSOR CHANGE
+#define INTERRUPT_BUTTON CHANGE
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 32
@@ -86,7 +87,7 @@ volatile unsigned long lastSensorInterrupt = 0;
 void ICACHE_RAM_ATTR handleSensorInterrupt();
 void handleSensorInterrupt() {
   unsigned long interruptTime = millis();
-  if (interruptTime - lastSensorInterrupt < 1000) {
+  if (interruptTime - lastSensorInterrupt < 100) {
     return;
   }
   sensorCount++;
