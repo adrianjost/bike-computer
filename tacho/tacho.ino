@@ -3,18 +3,27 @@ Author: Adrian Jost
 Version: 1.0.0
 **/
 
-// PIN DEFINITIONS
+// DEVICE CONFIGURATION
 
 #define PIN_SENSOR 3
 #define PIN_BUTTON 1
 #define PIN_SDA 2
 #define PIN_SCK 0
 
-#define SENSOR_SIGNAL HIGH
+// HIGH, LOW
+#define SENSOR_TRIGGERED HIGH
 #define BUTTON_PRESSED LOW
 
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 32 // OLED display height, in pixels
+// only LOLEVEL or HILEVEL interrupts work, no edge, that's an SDK or CPU limitation
+#define WAKEUP_SENSOR GPIO_PIN_INTR_LOLEVEL
+#define WAKEUP_BUTTON GPIO_PIN_INTR_LOLEVEL
+
+// CHANGE, RISING, FALLING
+#define INTERRUPT_SENSOR RISING
+#define INTERRUPT_BUTTON RISING
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 32
 #define OLED_RESET     1
 
 #define MENU_ITEMS 2
@@ -35,26 +44,24 @@ Version: 1.0.0
 // OTA Updates
 #include <ArduinoOTA.h>
 
-// Display
+// Display & RTC
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-
 // Date and time functions using a DS3231 RTC connected via I2C and Wire lib
 #include "RTClib.h"
 
 // Low Power Sleep States
 extern "C" {
+  #include "gpio.h"
+}
+extern "C" {
   #include "user_interface.h"
 }
 
-
-
 WiFiManager wm;
-
 FS* filesystem = &LittleFS;
-
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 RTC_DS3231 rtc;
 
@@ -73,44 +80,72 @@ char wifiPassword[32] = "";
  INIT
 **********************************/
 
-volatile unsigned int sensorCount = 0;
-volatile unsigned int lastSensorInterrupt = 0;
+unsigned int sensorCount = 0;
+volatile unsigned long lastSensorInterrupt = 0;
 
 void ICACHE_RAM_ATTR handleSensorInterrupt();
 void handleSensorInterrupt() {
-  if(millis() - lastSensorInterrupt < 100){
+  unsigned long interruptTime = millis();
+  if (interruptTime - lastSensorInterrupt < 1000) {
     return;
   }
   sensorCount++;
-  lastSensorInterrupt = millis();
+  lastSensorInterrupt = interruptTime;
 }
 
-volatile byte menuItem = 1;
-volatile unsigned int lastButtonInterrupt = 0;
+volatile byte menuItem = 0;
+volatile unsigned long lastButtonInterrupt = 0;
 
 void ICACHE_RAM_ATTR handleButtonInterrupt();
 void handleButtonInterrupt() {
-  if(millis() - lastButtonInterrupt < 500){
+  unsigned long interruptTime = millis();
+  if (interruptTime - lastButtonInterrupt < 200) {
     return;
   }
   menuItem = (menuItem + 1) % MENU_ITEMS;
-  lastButtonInterrupt = millis();
+  lastButtonInterrupt = interruptTime;
 }
 
-unsigned int lastWakeUp = 0;
-bool shouldSleep = false;
+// void forcedLightSleep() {
+//   // ATTENTION: disables internal clock, so millis() isn't counting up anymore
+//   WiFi.mode(WIFI_OFF);  // you must turn the modem off; using disconnect won't work
+//   wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
+//   #ifdef PIN_SENSOR
+//     gpio_pin_wakeup_enable(PIN_SENSOR, WAKEUP_SENSOR);
+//   #endif
+//   #ifdef PIN_BUTTON
+//     gpio_pin_wakeup_enable(PIN_BUTTON, WAKEUP_BUTTON);
+//   #endif
+//   // only LOLEVEL or HILEVEL interrupts work, no edge, that's an SDK or CPU limitation
+//   // wifi_fpm_set_wakeup_cb(handleInterrupt); // Set wakeup callback (optional)
+//   wifi_fpm_open();
+//   wifi_fpm_do_sleep(0xFFFFFFF);  // only 0xFFFFFFF, any other value and it won't disconnect the RTC timer
+//   delay(10); // it goes to sleep during this delay() and waits for an interrupt
+// }
 
-void forcedLightSleep() {
-  shouldSleep = true;
+void timedLightSleepCallback() {
+  // do nothing
+}
+void timedLightSleep(unsigned int sleepMs){
   WiFi.mode(WIFI_OFF);  // you must turn the modem off; using disconnect won't work
+  extern os_timer_t *timer_list;
+  timer_list = nullptr;  // stop (but don't disable) the 4 OS timers
   wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
-  gpio_pin_wakeup_enable(PIN_SENSOR, GPIO_PIN_INTR_HILEVEL);
-  gpio_pin_wakeup_enable(PIN_BUTTON, GPIO_PIN_INTR_LOLEVEL);
-  // only LOLEVEL or HILEVEL interrupts work, no edge, that's an SDK or CPU limitation
-  // wifi_fpm_set_wakeup_cb(handleInterrupt); // Set wakeup callback (optional)
+  #ifdef PIN_BUTTON
+    gpio_pin_wakeup_enable(GPIO_ID_PIN(PIN_BUTTON), WAKEUP_BUTTON); // (optional)
+  #endif
+  #ifdef PIN_SENSOR
+    // TODO if gpio_pin_wakeup_enable on PIN 3 is defined, ESP crashes
+    // the reason is not, that there are two wakeup pins defined, it also doesn't work if the BUTTON wakeup is removed
+    // the interrupt on the same pin is also not reason
+    gpio_pin_wakeup_enable(PIN_SENSOR, WAKEUP_SENSOR); // (optional)
+  #endif
+  wifi_fpm_set_wakeup_cb(timedLightSleepCallback); // set wakeup callback
+  // the callback is optional, but without it the modem will wake in 10 seconds then delay(10 seconds)
+  // with the callback the sleep time is only 10 seconds total, no extra delay() afterward
   wifi_fpm_open();
-  wifi_fpm_do_sleep(0xFFFFFFF);  // only 0xFFFFFFF, any other value and it won't disconnect the RTC timer
-  delay(10);  // it goes to sleep during this delay() and waits for an interrupt
+  wifi_fpm_do_sleep(sleepMs * 1000);  // Sleep range = 10000 ~ 268,435,454 uS (0xFFFFFFE, 2^28-1)
+  delay(sleepMs + 1); // delay needs to be 1 mS longer than sleep or it only goes into Modem Sleep
 }
 
 //*************************
@@ -196,35 +231,6 @@ void setupFilesystem() {
       Serial.println("hostname updated");
     #endif
   }
-}
-
-bool shouldEnterSetup(){
-  #ifndef PIN_RESET
-    return false;
-  #else
-    pinMode(PIN_RESET, INPUT);
-    byte clickThreshould = 5;
-    int timeSlot = 5000;
-    byte readingsPerSecond = 10;
-    byte click_count = 0;
-
-
-    for(int i=0; i < (timeSlot / readingsPerSecond / 10); i++){
-      byte buttonState = digitalRead(PIN_RESET);
-      if(buttonState == LOW){
-        click_count++;
-        if(click_count >= clickThreshould){
-          pinMode(PIN_RESET, OUTPUT);
-          digitalWrite(PIN_RESET, HIGH);
-          return true;
-        }
-      } else {
-        click_count = 0;
-      }
-      delay(1000 / readingsPerSecond);
-    }
-    return false;
-  #endif
 }
 
 void setupWifi(){
@@ -313,7 +319,6 @@ void setupOTAUpdate(){
   #endif
 }
 
-
 void setupDisplay(){
   Wire.begin(PIN_SDA, PIN_SCK);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -360,9 +365,12 @@ void setup() {
 
   #ifdef PIN_BUTTON
     pinMode(PIN_BUTTON, INPUT);
+    attachInterrupt(digitalPinToInterrupt(PIN_BUTTON), handleButtonInterrupt, INTERRUPT_BUTTON);
   #endif
+
   #ifdef PIN_SENSOR
     pinMode(PIN_SENSOR, INPUT);
+    attachInterrupt(digitalPinToInterrupt(PIN_SENSOR), handleSensorInterrupt, INTERRUPT_SENSOR);
   #endif
 
   setupDisplay();
@@ -381,7 +389,7 @@ void setup() {
   #ifdef PIN_SENSOR
     // WIFI stuff disabled during interrupt & sleep experiments
     // need to be manually reenabled when woken up from light-sleep
-    if(false && digitalRead(PIN_SENSOR) != SENSOR_SIGNAL){
+    if(false && digitalRead(PIN_SENSOR) != SENSOR_TRIGGERED){
       wifiActive = true;
       display.print("WiFi...");
       display.display();
@@ -407,9 +415,6 @@ void setup() {
   #endif
 
   delay(1000);
-
-  attachInterrupt(digitalPinToInterrupt(PIN_SENSOR), handleSensorInterrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(PIN_BUTTON), handleButtonInterrupt, FALLING);
 
   loopStartTime = millis();
 }
@@ -453,14 +458,7 @@ void showSpeed(float speed){
   display.display();
 }
 
-unsigned int lastTimeUpdate = 0;
 void showDateTime() {
-  if(millis() - lastTimeUpdate < 1000){
-    // updating the screen every second is enough
-    return;
-  }
-
-  lastTimeUpdate = millis();
   DateTime now = rtc.now();
 
   display.clearDisplay();
@@ -494,59 +492,46 @@ void showDateTime() {
   display.display();
 }
 
-void checkSensorReset() {
-  #ifdef PIN_BUTTON
-    if(digitalRead(PIN_BUTTON) != BUTTON_PRESSED){
-      return;
-    }
-    delay(500);
-    if(digitalRead(PIN_BUTTON) != BUTTON_PRESSED){
-      return;
-    }
-    sensorCount = 0;
-    while(digitalRead(PIN_BUTTON) == BUTTON_PRESSED){
-      // wait for release
-    }
-  #endif
-}
-
-void checkMenuSwitch(){
-  if(digitalRead(PIN_BUTTON) == BUTTON_PRESSED){
-    menuItem = (menuItem + 1) % MENU_ITEMS;
-    while(digitalRead(PIN_BUTTON) == BUTTON_PRESSED){
-      // do nothing
-    }
-  }
-}
-
 void updateScreen(){
   switch (menuItem) {
-    case 0:
-      // checkSensorReset();
-      showSpeed((float)((millis() - loopStartTime) % 80000) / 750);
-      // forcedLightSleep();
+    case 0: {
+      DateTime now = rtc.now();
+      showSpeed((float)now.second());
+      // showSpeed((float)((millis() - loopStartTime) % 110000) / 1000);
       break;
-    case 1:
+    }
+    case 1: {
       showDateTime();
       break;
+    }
     default:
       break;
   }
 }
 
+// unsigned long lastWakeUp = 0;
+// unsigned long lastHandledSensorInterrupt = 0;
 void loop() {
-  // if(shouldSleep && millis() - lastWakeUp < 1000){
+  // if(millis() - lastWakeUp < 1000){
   //   only fully wake up after a max if 1000ms since going to sleep
   //   forcedLightSleep();
   // }else{
   // lastWakeUp = millis();
-  // shouldSleep = false;
   // if(wifiActive){
   //   ArduinoOTA.handle(); // listen for OTA Updates
   // }
-  // checkMenuSwitch();
-    updateScreen();
-    // forcedLightSleep();
-    delay(1000);
+  // unsigned int now = millis();
+  // if(lastSensorInterrupt != 0 && now - lastHandledSensorInterrupt > 5000){
+  //   sensorCount++;
+  //   lastHandledSensorInterrupt = lastSensorInterrupt;
+  // }
+  // lastSensorInterrupt = 0;
+  updateScreen();
+  timedLightSleep(1000);
+  // delay(1000);
+  // if(now - lastSensorInterrupt > 1000 && now - lastButtonInterrupt > 1000){
+  //   timedLightSleep(2000); // TODO extend to 60s and remove seconds from clock view
+  // }else{
+  //   delay(20);
   // }
 }
