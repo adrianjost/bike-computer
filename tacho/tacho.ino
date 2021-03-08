@@ -11,7 +11,7 @@ Version: 1.0.0
 #define PIN_SCK 0
 
 // HIGH, LOW
-#define SENSOR_TRIGGERED HIGH
+#define SENSOR_TRIGGERED LOW
 #define BUTTON_PRESSED LOW
 
 // only LOLEVEL or HILEVEL interrupts work, no edge, that's an SDK or CPU limitation
@@ -19,15 +19,15 @@ Version: 1.0.0
 #define WAKEUP_BUTTON GPIO_PIN_INTR_LOLEVEL
 
 // CHANGE, RISING, FALLING
-// using change to prevent misses due to sleep and prevent multiple calls with throttling
-#define INTERRUPT_SENSOR CHANGE
-#define INTERRUPT_BUTTON CHANGE
+#define INTERRUPT_SENSOR RISING
+#define INTERRUPT_BUTTON RISING
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 32
 #define OLED_RESET     1
 
 #define MENU_ITEMS 2
+#define LOW_POWER_DELAY 1000
 
 // config storage
 #define PATH_CONFIG_WIFI "/config.json"
@@ -71,58 +71,20 @@ RTC_DS3231 rtc;
 const size_t maxWifiConfigSize = JSON_OBJECT_SIZE(2) + 80;
 
 //*************************
-// global State
+// GLOBAL STATE
 //*************************
 
 char hostname[32] = "A CHIP";
 char wifiPassword[32] = "";
 
-/**********************************
- INIT
-**********************************/
-
-unsigned int sensorCount = 0;
+volatile unsigned int sensorCount = 0;
 volatile unsigned long lastSensorInterrupt = 0;
-
-void ICACHE_RAM_ATTR handleSensorInterrupt();
-void handleSensorInterrupt() {
-  unsigned long interruptTime = millis();
-  if (interruptTime - lastSensorInterrupt < 100) {
-    return;
-  }
-  sensorCount++;
-  lastSensorInterrupt = interruptTime;
-}
-
 volatile byte menuItem = 0;
 volatile unsigned long lastButtonInterrupt = 0;
 
-void ICACHE_RAM_ATTR handleButtonInterrupt();
-void handleButtonInterrupt() {
-  unsigned long interruptTime = millis();
-  if (interruptTime - lastButtonInterrupt < 200) {
-    return;
-  }
-  menuItem = (menuItem + 1) % MENU_ITEMS;
-  lastButtonInterrupt = interruptTime;
-}
-
-// void forcedLightSleep() {
-//   // ATTENTION: disables internal clock, so millis() isn't counting up anymore
-//   WiFi.mode(WIFI_OFF);  // you must turn the modem off; using disconnect won't work
-//   wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
-//   #ifdef PIN_SENSOR
-//     gpio_pin_wakeup_enable(PIN_SENSOR, WAKEUP_SENSOR);
-//   #endif
-//   #ifdef PIN_BUTTON
-//     gpio_pin_wakeup_enable(PIN_BUTTON, WAKEUP_BUTTON);
-//   #endif
-//   // only LOLEVEL or HILEVEL interrupts work, no edge, that's an SDK or CPU limitation
-//   // wifi_fpm_set_wakeup_cb(handleInterrupt); // Set wakeup callback (optional)
-//   wifi_fpm_open();
-//   wifi_fpm_do_sleep(0xFFFFFFF);  // only 0xFFFFFFF, any other value and it won't disconnect the RTC timer
-//   delay(10); // it goes to sleep during this delay() and waits for an interrupt
-// }
+/**********************************
+ UTILS
+**********************************/
 
 void timedLightSleepCallback() {
   // do nothing
@@ -136,9 +98,6 @@ void timedLightSleep(unsigned int sleepMs){
     gpio_pin_wakeup_enable(GPIO_ID_PIN(PIN_BUTTON), WAKEUP_BUTTON); // (optional)
   #endif
   #ifdef PIN_SENSOR
-    // TODO if gpio_pin_wakeup_enable on PIN 3 is defined, ESP crashes
-    // the reason is not, that there are two wakeup pins defined, it also doesn't work if the BUTTON wakeup is removed
-    // the interrupt on the same pin is also not reason
     gpio_pin_wakeup_enable(PIN_SENSOR, WAKEUP_SENSOR); // (optional)
   #endif
   wifi_fpm_set_wakeup_cb(timedLightSleepCallback); // set wakeup callback
@@ -148,6 +107,122 @@ void timedLightSleep(unsigned int sleepMs){
   wifi_fpm_do_sleep(sleepMs * 1000);  // Sleep range = 10000 ~ 268,435,454 uS (0xFFFFFFE, 2^28-1)
   delay(sleepMs + 1); // delay needs to be 1 mS longer than sleep or it only goes into Modem Sleep
 }
+
+void sleep(unsigned int duration){
+  unsigned long now = millis();
+  if ((now - lastSensorInterrupt < LOW_POWER_DELAY) || (now - lastButtonInterrupt < LOW_POWER_DELAY)) {
+    // we are active, keep everything alive
+    if(duration < LOW_POWER_DELAY){
+      delay(duration);
+    }else{
+      delay(LOW_POWER_DELAY);
+    }
+  }else{
+    timedLightSleep(duration);
+  }
+}
+
+//*************************
+// INPUTS
+//*************************
+
+void ICACHE_RAM_ATTR handleSensorInterrupt();
+void handleSensorInterrupt() {
+  unsigned long interruptTime = millis();
+  if (interruptTime - lastSensorInterrupt < 500) {
+    return;
+  }
+  sensorCount++;
+  lastSensorInterrupt = interruptTime;
+}
+
+void ICACHE_RAM_ATTR handleButtonInterrupt();
+void handleButtonInterrupt() {
+  unsigned long interruptTime = millis();
+  if (interruptTime - lastButtonInterrupt < 200) {
+    return;
+  }
+  menuItem = (menuItem + 1) % MENU_ITEMS;
+  lastButtonInterrupt = interruptTime;
+}
+
+//*************************
+// SCREENS
+//*************************
+
+void drawMenuPosition(byte position) {
+  byte width = SCREEN_WIDTH / MENU_ITEMS;
+  display.drawFastHLine(width * position, SCREEN_HEIGHT - 1, width, WHITE);
+}
+
+void showSpeed(float speed){
+  byte base = speed;
+
+  display.clearDisplay();
+  display.setTextSize(4);
+
+  if(base >= 100){
+    display.setCursor(24, 0);
+    display.print(base);
+  }else{
+    byte rest = ((byte)(speed * 10)) - (base * 10);
+    display.setCursor(base > 9 ? 0 : 24, 0);
+    display.print(base);
+    display.print(".");
+    display.print(rest);
+  }
+
+  display.setCursor(102, 20);
+  display.setTextSize(1);
+  display.print("km/h");
+
+  display.setCursor(100, 0);
+  display.setTextSize(1);
+  display.print(sensorCount);
+
+  drawMenuPosition(0);
+
+  display.display();
+}
+
+void showDateTime() {
+  DateTime now = rtc.now();
+
+  display.clearDisplay();
+  display.setCursor(2, 5);
+  display.setTextSize(3);
+
+  byte hour = now.hour();
+  if(hour < 10){
+    display.print("0");
+  }
+  display.print(hour);
+
+  display.print(":");
+
+  byte minute = now.minute();
+  if(minute < 10){
+    display.print("0");
+  }
+  display.print(minute);
+
+  display.setTextSize(2);
+  display.setCursor(102, 12);
+  byte second = now.second();
+  if(second < 10){
+    display.print("0");
+  }
+  display.print(second);
+
+  drawMenuPosition(1);
+
+  display.display();
+}
+
+
+/**********************************
+ INIT
+**********************************/
 
 //*************************
 // config manager
@@ -354,7 +429,7 @@ void setupRTC(){
 //*************************
 
 unsigned int loopStartTime;
-byte wifiActive = false;
+bool wifiActive = false;
 
 void setup() {
   #ifdef DEBUG
@@ -424,115 +499,26 @@ void setup() {
 // LOOP
 //*************************
 
-void drawMenuPosition(byte position) {
-  byte width = SCREEN_WIDTH / MENU_ITEMS;
-  display.drawFastHLine(width * position, SCREEN_HEIGHT - 1, width, WHITE);
-}
 
-void showSpeed(float speed){
-  byte base = speed;
+// unsigned long lastWakeUp = 0;
+// unsigned long lastHandledSensorInterrupt = 0;
 
-  display.clearDisplay();
-  display.setTextSize(4);
-
-  if(base >= 100){
-    display.setCursor(24, 0);
-    display.print(base);
-  }else{
-    byte rest = ((byte)(speed * 10)) - (base * 10);
-    display.setCursor(base > 9 ? 0 : 24, 0);
-    display.print(base);
-    display.print(".");
-    display.print(rest);
-  }
-
-  display.setCursor(102, 20);
-  display.setTextSize(1);
-  display.print("km/h");
-
-  display.setCursor(100, 0);
-  display.setTextSize(1);
-  display.print(sensorCount);
-
-  drawMenuPosition(0);
-
-  display.display();
-}
-
-void showDateTime() {
-  DateTime now = rtc.now();
-
-  display.clearDisplay();
-  display.setCursor(2, 5);
-  display.setTextSize(3);
-
-  byte hour = now.hour();
-  if(hour < 10){
-    display.print("0");
-  }
-  display.print(hour);
-
-  display.print(":");
-
-  byte minute = now.minute();
-  if(minute < 10){
-    display.print("0");
-  }
-  display.print(minute);
-
-  display.setTextSize(2);
-  display.setCursor(102, 12);
-  byte second = now.second();
-  if(second < 10){
-    display.print("0");
-  }
-  display.print(second);
-
-  drawMenuPosition(1);
-
-  display.display();
-}
-
-void updateScreen(){
+void loop() {
   switch (menuItem) {
     case 0: {
       DateTime now = rtc.now();
       showSpeed((float)now.second());
       // showSpeed((float)((millis() - loopStartTime) % 110000) / 1000);
+      sleep(1000);
       break;
     }
     case 1: {
       showDateTime();
+      // TODO somehow the screen change is only rendered after the timeout, but the interrupt is working, so the CPU must be waked up.
+      sleep(5000); // TODO extend to 60s and remove seconds from clock view
       break;
     }
     default:
       break;
   }
-}
-
-// unsigned long lastWakeUp = 0;
-// unsigned long lastHandledSensorInterrupt = 0;
-void loop() {
-  // if(millis() - lastWakeUp < 1000){
-  //   only fully wake up after a max if 1000ms since going to sleep
-  //   forcedLightSleep();
-  // }else{
-  // lastWakeUp = millis();
-  // if(wifiActive){
-  //   ArduinoOTA.handle(); // listen for OTA Updates
-  // }
-  // unsigned int now = millis();
-  // if(lastSensorInterrupt != 0 && now - lastHandledSensorInterrupt > 5000){
-  //   sensorCount++;
-  //   lastHandledSensorInterrupt = lastSensorInterrupt;
-  // }
-  // lastSensorInterrupt = 0;
-  updateScreen();
-  timedLightSleep(1000);
-  // delay(1000);
-  // if(now - lastSensorInterrupt > 1000 && now - lastButtonInterrupt > 1000){
-  //   timedLightSleep(2000); // TODO extend to 60s and remove seconds from clock view
-  // }else{
-  //   delay(20);
-  // }
 }
