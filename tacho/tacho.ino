@@ -109,14 +109,18 @@ void timedLightSleep(unsigned int sleepMs){
 }
 
 void sleep(unsigned int duration){
+  timedLightSleep(duration);
+  return;
+
   unsigned long now = millis();
   if ((now - lastSensorInterrupt < LOW_POWER_DELAY) || (now - lastButtonInterrupt < LOW_POWER_DELAY)) {
     // we are active, keep everything alive
-    if(duration < LOW_POWER_DELAY){
-      delay(duration);
-    }else{
-      delay(LOW_POWER_DELAY);
-    }
+    return;
+    // if(duration < LOW_POWER_DELAY){
+    //   delay(duration);
+    // }else{
+    //   delay(LOW_POWER_DELAY);
+    // }
   }else{
     timedLightSleep(duration);
   }
@@ -129,7 +133,7 @@ void sleep(unsigned int duration){
 void ICACHE_RAM_ATTR handleSensorInterrupt();
 void handleSensorInterrupt() {
   unsigned long interruptTime = millis();
-  if (interruptTime - lastSensorInterrupt < 500) {
+  if (interruptTime - lastSensorInterrupt < 125) {
     return;
   }
   sensorCount++;
@@ -219,6 +223,25 @@ void showDateTime() {
   display.display();
 }
 
+void updateScreen(){
+  switch (menuItem) {
+    case 0: {
+      DateTime now = rtc.now();
+      showSpeed((float)now.second());
+      // showSpeed((float)((millis() - loopStartTime) % 110000) / 1000);
+      sleep(2000);
+      break;
+    }
+    case 1: {
+      showDateTime();
+      // TODO somehow the screen change is only rendered after the timeout, but the interrupt is working, so the CPU must be waked up.
+      sleep(4000); // TODO extend to 60s and remove seconds from clock view
+      break;
+    }
+    default:
+      break;
+  }
+}
 
 /**********************************
  INIT
@@ -504,21 +527,5 @@ void setup() {
 // unsigned long lastHandledSensorInterrupt = 0;
 
 void loop() {
-  switch (menuItem) {
-    case 0: {
-      DateTime now = rtc.now();
-      showSpeed((float)now.second());
-      // showSpeed((float)((millis() - loopStartTime) % 110000) / 1000);
-      sleep(1000);
-      break;
-    }
-    case 1: {
-      showDateTime();
-      // TODO somehow the screen change is only rendered after the timeout, but the interrupt is working, so the CPU must be waked up.
-      sleep(5000); // TODO extend to 60s and remove seconds from clock view
-      break;
-    }
-    default:
-      break;
-  }
+  updateScreen();
 }
