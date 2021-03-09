@@ -25,3 +25,7 @@ https://github.com/adafruit/RTClib
 [Power Consumption](https://bbs.espressif.com/viewtopic.php?t=133)
 [Low Power Demo](https://github.com/esp8266/Arduino/tree/master/libraries/esp8266/examples/LowPowerDemo)
 [Sleep WakeUp Cause ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/sleep_modes.html#checking-sleep-wakeup-cause)
+[Espressif Low Power Solutions](https://www.espressif.com/sites/default/files/9b-esp8266-low_power_solutions_en_0.pdf)
+[ATTINY85 Speedometer](https://easyeda.com/sergiu.stanciu/oled_display_attiny)
+[Tiny USB-C LiPo Charger](https://www.tindie.com/products/beastdevices/ant-usb-c-lipo-battery-charger/)
+[Watchy Hardware](https://watchy.sqfmi.com/docs/hardware/)
