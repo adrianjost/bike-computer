@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    "iterator": "cpp"
+  },
+  // https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+  "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, IndentWidth: 2, ColumnLimit: 0 }"
+}
