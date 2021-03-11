@@ -29,3 +29,4 @@ https://github.com/adafruit/RTClib
 [ATTINY85 Speedometer](https://easyeda.com/sergiu.stanciu/oled_display_attiny)
 [Tiny USB-C LiPo Charger](https://www.tindie.com/products/beastdevices/ant-usb-c-lipo-battery-charger/)
 [Watchy Hardware](https://watchy.sqfmi.com/docs/hardware/)
+[Online Plot Maker](https://chart-studio.plotly.com/create/#/)
