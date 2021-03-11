@@ -47,15 +47,9 @@ void handleInterrupt() {
   }
 
   if (dataToggle) {
-    if (dataA.count == 0) {
-      dataA.start = interruptTime;
-    }
     dataA.end = interruptTime;
     dataA.count += 1;
   } else {
-    if (dataB.count == 0) {
-      dataB.start = interruptTime;
-    }
     dataB.end = interruptTime;
     dataB.count += 1;
   }
@@ -73,12 +67,14 @@ void updateSpeed() {
     start = dataA.start;
     end = dataA.end;
     count = dataA.count;
-    dataA = {0, 0, 0};
+    dataB.start = end;
+    dataA = { 0, 0, 0};
   } else {
     start = dataB.start;
     end = dataB.end;
     count = dataB.count;
-    dataB = {0, 0, 0};
+    dataA.start = end;
+    dataB = { 0, 0, 0};
   }
 
   if (start == end) {
