@@ -21,7 +21,7 @@
 ## Open Challenges
 
 - [ ] low battery warning
-- [ ] self-power-off-circuit
+- [x] [self-power-off-circuit](./challenges/self-power-off-circuit/self-power-off-circuit.md)
 - [ ] measure speed with Attiny45
 - [ ] Attiny45 i2c communication with ESP8266
 - [ ] Hardware Debounce Reed-Switch
