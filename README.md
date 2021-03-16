@@ -15,6 +15,7 @@
 
 ### Optional Features
 
+- [ ] "easy" software update
 - [ ] stopwatch
 
 ## Open Challenges
