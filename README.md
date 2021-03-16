@@ -44,3 +44,4 @@ https://github.com/adafruit/RTClib
 [Tiny USB-C LiPo Charger](https://www.tindie.com/products/beastdevices/ant-usb-c-lipo-battery-charger/)
 [Watchy Hardware](https://watchy.sqfmi.com/docs/hardware/)
 [Online Plot Maker](https://chart-studio.plotly.com/create/#/)
+[JST SH 1mm Connector](https://www.youtube.com/watch?v=wn3ixZ-sv5w)
