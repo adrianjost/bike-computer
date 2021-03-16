@@ -2,6 +2,17 @@ Currently using ESP-01S but ESP-03 might be a bit better suited for the final PC
 
 ### Pin Compatibility
 
+#### ESP8266-03
+
+![ESP-03 Pinout](./ESP-03-pinout.jpg)
+
+- red underline - connect to VCC
+- black underline - connect to GND
+- red background - needs PULL-UP resistor (HIGH at boot)
+- black background - needs PULL-DOWN resistor (LOW at boot)
+
+#### ESP8266-01
+
 | Arduino Pin | IN  | OUT |  SDA | SCK | note                                                                                   |
 | :---------: | :-: | :-: | :--: | :-: | -------------------------------------------------------------------------------------- |
 |      0      | ✅  | ✅  |  ❌  | ✅  | is pulled high during normal operation, PULL-UP is best practice                       |
@@ -10,3 +21,13 @@ Currently using ESP-01S but ESP-03 might be a bit better suited for the final PC
 |      3      | ✅  | ✅  |  ❌  | ❌  |                                                                                        |
 
 ![ESP8266-01 Pinout & Boot Modes](https://i.pinimg.com/originals/cf/7e/8d/cf7e8de45255400203f46996d8af9603.png)
+
+## Usefull Links / Tutorials / Resources
+
+https://lastminuteengineers.com/oled-display-arduino-tutorial/
+https://github.com/adafruit/Adafruit_SSD1306/blob/master/Adafruit_SSD1306.cpp
+https://www.instructables.com/ESP8266-01-With-Multiple-I2C-Devices-Exploring-ESP/
+https://github.com/adafruit/RTClib
+[Tiny USB-C LiPo Charger](https://www.tindie.com/products/beastdevices/ant-usb-c-lipo-battery-charger/)
+[Watchy Hardware](https://watchy.sqfmi.com/docs/hardware/)
+[JST SH 1mm Connector](https://www.youtube.com/watch?v=wn3ixZ-sv5w)
