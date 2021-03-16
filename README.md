@@ -20,7 +20,7 @@
 
 ## Open Challenges
 
-- [ ] low battery warning
+- [ ] [low battery warning](./challenges/low-battery-warning/low-battery-warning.md)
 - [x] [self-power-off-circuit](./challenges/self-power-off-circuit/self-power-off-circuit.md)
 - [ ] [measure speed with Attiny45](./challenges/speed-measurement/speed-measurement.md)
 - [ ] Attiny45 i2c communication with ESP8266
@@ -29,6 +29,7 @@
 - [ ] activate WiFi only on certain pages
 - [ ] store trips on some kind of storage
 - [ ] implement API to download stories from device
+- [ ] [6 - 10h active runtime](./challenges/low-power/low-power.md)
 
 ## Usefull Links / Tutorials / Resources
 
