@@ -1,21 +1,35 @@
 # Bike-Computer
 
-## Development Notes
+## Plannes Features
 
-Currently using ESP-01S but ESP-03 might be a bit better suited for the final PCB cause it is smaller and has more PINs available. However I couldn't find a seller yet.
+- [ ] current speed
+- [ ] current time
+- [ ] max speed
+- [ ] total distance
+- [ ] current trip
+  - [ ] distance
+  - [ ] driving time
+  - [ ] avg speed
+- [ ] wifi data export of all trips
+- [ ] auto-trip detection - save current trip on pause (10min timeout?)
 
-### Pin Compatibility
+### Optional Features
 
-| Arduino Pin | IN  | OUT |  SDA | SCK | note                                                                                   |
-| :---------: | :-: | :-: | :--: | :-: | -------------------------------------------------------------------------------------- |
-|      0      | ✅  | ✅  |  ❌  | ✅  | is pulled high during normal operation, PULL-UP is best practice                       |
-|      1      | ✅  | ✅  |  ❌  | ❌  | input seems to have internal PULL-UP (needs testing, if true, add external to be safe) |
-|      2      | ✅  | ✅  |  ✅  | ❌  | can’t be low at boot                                                                   |
-|      3      | ✅  | ✅  |  ❌  | ❌  |                                                                                        |
+- [ ] stopwatch
 
-![ESP8266-01 Pinout & Boot Modes](https://i.pinimg.com/originals/cf/7e/8d/cf7e8de45255400203f46996d8af9603.png)
+## Open Challenges
 
-### Usefull Links / Tutorials
+- [ ] low battery warning
+- [ ] self-power-off-circuit
+- [ ] measure speed with Attiny45
+- [ ] Attiny45 i2c communication with ESP8266
+- [ ] Hardware Debounce Reed-Switch
+- [ ] Attiny45 Watchdog Sleep for given time (but continue speed detection)
+- [ ] activate WiFi only on certain pages
+- [ ] store trips on some kind of storage
+- [ ] implement API to download stories from device
+
+## Usefull Links / Tutorials / Resources
 
 https://lastminuteengineers.com/oled-display-arduino-tutorial/
 https://github.com/adafruit/Adafruit_SSD1306/blob/master/Adafruit_SSD1306.cpp
