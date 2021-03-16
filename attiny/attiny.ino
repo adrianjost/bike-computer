@@ -30,16 +30,14 @@ bool validateSensorState(bool expected) {
 
 void handleInterrupt() {
   unsigned long interruptTime = millis();
-  unsigned long lastInterrupt = data[lastWriteIndex];
-  if (interruptTime - lastInterrupt < INTERRUPT_THROTTLE_COOLDOWN) {
+  if (interruptTime - data[lastWriteIndex] < INTERRUPT_THROTTLE_COOLDOWN) {
     return;
   }
-  if (!validateSensorState(SENSOR_TRIGGERED)) {
-    return;
-  }
-  byte currentWriteIndex = (lastWriteIndex + 1) % DATA_SIZE;
-  data[currentWriteIndex] = interruptTime;
-  lastWriteIndex = currentWriteIndex;
+  // if (!validateSensorState(SENSOR_TRIGGERED)) {
+  //   return;
+  // }
+  lastWriteIndex = (lastWriteIndex + 1) % DATA_SIZE;
+  data[lastWriteIndex] = interruptTime;
 }
 
 float speed = 0;
