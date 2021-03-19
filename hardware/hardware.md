@@ -2,15 +2,6 @@ Currently using ESP-01S but ESP-03 might be a bit better suited for the final PC
 
 ### Pin Compatibility
 
-#### ESP8266-03
-
-![ESP-03 Pinout](./ESP-03-pinout.jpg)
-
-- red underline - connect to VCC
-- black underline - connect to GND
-- red background - needs PULL-UP resistor (HIGH at boot)
-- black background - needs PULL-DOWN resistor (LOW at boot)
-
 #### ESP8266-01
 
 | Arduino Pin | IN  | OUT |  SDA | SCK | note                                                                                   |
