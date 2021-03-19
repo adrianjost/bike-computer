@@ -6,7 +6,7 @@ Version: 1.0.0
 // DEVICE CONFIGURATION
 
 #define PIN_SENSOR 3
-#define PIN_BUTTON 1
+#define PIN_BUTTON 12
 #define PIN_SDA 2
 #define PIN_SCK 0
 
@@ -24,7 +24,7 @@ Version: 1.0.0
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 32
-#define OLED_RESET     1
+#define OLED_RESET 1
 
 #define MENU_ITEMS 2
 #define LOW_POWER_DELAY 1000
@@ -34,35 +34,35 @@ Version: 1.0.0
 
 // WiFiManager
 // https://github.com/tzapu/WiFiManager WiFi Configuration Magic
-#include <WiFiManager.h>        // 1.0.0 - tzapu,tablatronix (GitHub Develop Branch c9665ad)
 #include <FS.h>
-#include <LittleFS.h>           // requires esp8266-core >2.6.3
+#include <LittleFS.h>     // requires esp8266-core >2.6.3
+#include <WiFiManager.h>  // 1.0.0 - tzapu,tablatronix (GitHub Develop Branch c9665ad)
 
 // Website Communication
-#include <ESP8266WiFi.h>        // 1.0.0 - Ivan Grokhotkov
-#include <ArduinoJson.h>        // 6.16.1 - Benoit Blanchon
+#include <ArduinoJson.h>  // 6.16.1 - Benoit Blanchon
+#include <ESP8266WiFi.h>  // 1.0.0 - Ivan Grokhotkov
 
 // OTA Updates
 #include <ArduinoOTA.h>
 
 // Display & RTC
-#include <SPI.h>
-#include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <SPI.h>
+#include <Wire.h>
 // Date and time functions using a DS3231 RTC connected via I2C and Wire lib
 #include "RTClib.h"
 
 // Low Power Sleep States
 extern "C" {
-  #include "gpio.h"
+#include "gpio.h"
 }
 extern "C" {
-  #include "user_interface.h"
+#include "user_interface.h"
 }
 
 WiFiManager wm;
-FS* filesystem = &LittleFS;
+FS *filesystem = &LittleFS;
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 RTC_DS3231 rtc;
 
@@ -89,26 +89,26 @@ volatile unsigned long lastButtonInterrupt = 0;
 void timedLightSleepCallback() {
   // do nothing
 }
-void timedLightSleep(unsigned int sleepMs){
+void timedLightSleep(unsigned int sleepMs) {
   WiFi.mode(WIFI_OFF);  // you must turn the modem off; using disconnect won't work
   extern os_timer_t *timer_list;
   timer_list = nullptr;  // stop (but don't disable) the 4 OS timers
   wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
-  #ifdef PIN_BUTTON
-    gpio_pin_wakeup_enable(GPIO_ID_PIN(PIN_BUTTON), WAKEUP_BUTTON); // (optional)
-  #endif
-  #ifdef PIN_SENSOR
-    gpio_pin_wakeup_enable(PIN_SENSOR, WAKEUP_SENSOR); // (optional)
-  #endif
-  wifi_fpm_set_wakeup_cb(timedLightSleepCallback); // set wakeup callback
+#ifdef PIN_BUTTON
+  gpio_pin_wakeup_enable(GPIO_ID_PIN(PIN_BUTTON), WAKEUP_BUTTON);  // (optional)
+#endif
+#ifdef PIN_SENSOR
+  gpio_pin_wakeup_enable(PIN_SENSOR, WAKEUP_SENSOR);  // (optional)
+#endif
+  wifi_fpm_set_wakeup_cb(timedLightSleepCallback);  // set wakeup callback
   // the callback is optional, but without it the modem will wake in 10 seconds then delay(10 seconds)
   // with the callback the sleep time is only 10 seconds total, no extra delay() afterward
   wifi_fpm_open();
   wifi_fpm_do_sleep(sleepMs * 1000);  // Sleep range = 10000 ~ 268,435,454 uS (0xFFFFFFE, 2^28-1)
-  delay(sleepMs + 1); // delay needs to be 1 mS longer than sleep or it only goes into Modem Sleep
+  delay(sleepMs + 1);                 // delay needs to be 1 mS longer than sleep or it only goes into Modem Sleep
 }
 
-void sleep(unsigned int duration){
+void sleep(unsigned int duration) {
   timedLightSleep(duration);
   return;
 
@@ -121,7 +121,7 @@ void sleep(unsigned int duration){
     // }else{
     //   delay(LOW_POWER_DELAY);
     // }
-  }else{
+  } else {
     timedLightSleep(duration);
   }
 }
@@ -159,16 +159,16 @@ void drawMenuPosition(byte position) {
   display.drawFastHLine(width * position, SCREEN_HEIGHT - 1, width, WHITE);
 }
 
-void showSpeed(float speed){
+void showSpeed(float speed) {
   byte base = speed;
 
   display.clearDisplay();
   display.setTextSize(4);
 
-  if(base >= 100){
+  if (base >= 100) {
     display.setCursor(24, 0);
     display.print(base);
-  }else{
+  } else {
     byte rest = ((byte)(speed * 10)) - (base * 10);
     display.setCursor(base > 9 ? 0 : 24, 0);
     display.print(base);
@@ -197,7 +197,7 @@ void showDateTime() {
   display.setTextSize(3);
 
   byte hour = now.hour();
-  if(hour < 10){
+  if (hour < 10) {
     display.print("0");
   }
   display.print(hour);
@@ -205,7 +205,7 @@ void showDateTime() {
   display.print(":");
 
   byte minute = now.minute();
-  if(minute < 10){
+  if (minute < 10) {
     display.print("0");
   }
   display.print(minute);
@@ -213,7 +213,7 @@ void showDateTime() {
   display.setTextSize(2);
   display.setCursor(102, 12);
   byte second = now.second();
-  if(second < 10){
+  if (second < 10) {
     display.print("0");
   }
   display.print(second);
@@ -223,7 +223,7 @@ void showDateTime() {
   display.display();
 }
 
-void updateScreen(){
+void updateScreen() {
   switch (menuItem) {
     case 0: {
       DateTime now = rtc.now();
@@ -235,7 +235,7 @@ void updateScreen(){
     case 1: {
       showDateTime();
       // TODO somehow the screen change is only rendered after the timeout, but the interrupt is working, so the CPU must be waked up.
-      sleep(4000); // TODO extend to 60s and remove seconds from clock view
+      sleep(4000);  // TODO extend to 60s and remove seconds from clock view
       break;
     }
     default:
@@ -254,58 +254,60 @@ void updateScreen(){
 bool shouldSaveConfig = false;
 WiFiManager *globalWiFiManager;
 
-void saveConfigCallback () {
-  #ifdef DEBUG
-    Serial.println("shouldSaveConfig");
-  #endif
+void saveConfigCallback() {
+#ifdef DEBUG
+  Serial.println("shouldSaveConfig");
+#endif
   shouldSaveConfig = true;
   globalWiFiManager->stopConfigPortal();
 }
 
-void configModeCallback (WiFiManager *myWiFiManager) {
+void configModeCallback(WiFiManager *myWiFiManager) {
   globalWiFiManager = myWiFiManager;
-  #ifdef DEBUG
-    Serial.println("start config portal");
-  #endif
+#ifdef DEBUG
+  Serial.println("start config portal");
+#endif
 }
 
 void setupFilesystem() {
-  #ifdef DEBUG
-    Serial.println("setupFilesystem");
-  #endif
+#ifdef DEBUG
+  Serial.println("setupFilesystem");
+#endif
 
   // initial values
   ("SmartLight-" + String(ESP.getChipId(), HEX)).toCharArray(hostname, 32);
 
-  #ifdef DEBUG
-    Serial.print("hostname: ");
-    Serial.println(hostname);
-  #endif
+#ifdef DEBUG
+  Serial.print("hostname: ");
+  Serial.println(hostname);
+#endif
 
-  #ifdef DEBUG
-    Serial.println("exec filesystem->begin()");
-  #endif
+#ifdef DEBUG
+  Serial.println("exec filesystem->begin()");
+#endif
   filesystem->begin();
-  #ifdef DEBUG
-    Serial.println("filesystem->begin() executed");
-  #endif
+#ifdef DEBUG
+  Serial.println("filesystem->begin() executed");
+#endif
 
-  if(!filesystem->exists(PATH_CONFIG_WIFI)) {
-    #ifdef DEBUG
-      Serial.println("config file doesn't exist");
-    #endif
+  if (!filesystem->exists(PATH_CONFIG_WIFI)) {
+#ifdef DEBUG
+    Serial.println("config file doesn't exist");
+#endif
     return;
   }
-  #ifdef DEBUG
-    Serial.println("configfile exists");
-  #endif
+#ifdef DEBUG
+  Serial.println("configfile exists");
+#endif
 
   //file exists, reading and loading
   File configFile = filesystem->open(PATH_CONFIG_WIFI, "r");
-  if(!configFile) { return; }
-  #ifdef DEBUG
-    Serial.println("configfile read");
-  #endif
+  if (!configFile) {
+    return;
+  }
+#ifdef DEBUG
+  Serial.println("configfile read");
+#endif
 
   size_t size = configFile.size();
   // Allocate a buffer to store contents of the file.
@@ -313,26 +315,28 @@ void setupFilesystem() {
   configFile.readBytes(buf.get(), size);
   DynamicJsonDocument doc(maxWifiConfigSize);
   auto error = deserializeJson(doc, buf.get());
-  if(error){ return; }
+  if (error) {
+    return;
+  }
   configFile.close();
 
-  #ifdef DEBUG
-    Serial.println("configfile serialized");
-  #endif
+#ifdef DEBUG
+  Serial.println("configfile serialized");
+#endif
 
   // copy from config to variable
-  if(doc.containsKey("hostname")){
-    #ifdef DEBUG
-      Serial.println("hostname key read");
-    #endif
+  if (doc.containsKey("hostname")) {
+#ifdef DEBUG
+    Serial.println("hostname key read");
+#endif
     strcpy(hostname, doc["hostname"]);
-    #ifdef DEBUG
-      Serial.println("hostname updated");
-    #endif
+#ifdef DEBUG
+    Serial.println("hostname updated");
+#endif
   }
 }
 
-void setupWifi(){
+void setupWifi() {
   WiFi.mode(WIFI_STA);
 
   wm.setDebugOutput(false);
@@ -350,15 +354,15 @@ void setupWifi(){
   WiFiManagerParameter setting_hostname("hostname", "Devicename: (e.g. <code>smartlight-kitchen</code>)", hostname, 32);
   wm.addParameter(&setting_hostname);
 
-  bool forceSetup = false; // TODO: shouldEnterSetup();
+  bool forceSetup = false;  // TODO: shouldEnterSetup();
   bool setup = forceSetup
-    ? wm.startConfigPortal("SmartLight Setup", "LightItUp")
-    : wm.autoConnect("SmartLight Setup", "LightItUp");
+                   ? wm.startConfigPortal("SmartLight Setup", "LightItUp")
+                   : wm.autoConnect("SmartLight Setup", "LightItUp");
 
   if (shouldSaveConfig) {
-    #ifdef DEBUG
-      Serial.println("write config to filesystem");
-    #endif
+#ifdef DEBUG
+    Serial.println("write config to filesystem");
+#endif
     DynamicJsonDocument doc(maxWifiConfigSize);
 
     doc["hostname"] = setting_hostname.getValue();
@@ -367,67 +371,72 @@ void setupWifi(){
     serializeJson(doc, configFile);
     configFile.close();
 
-    #ifdef DEBUG
-      Serial.println("config written to filesystem");
-    #endif
+#ifdef DEBUG
+    Serial.println("config written to filesystem");
+#endif
 
     ESP.restart();
   }
 
-  if(!setup){
+  if (!setup) {
     // shut down till the next reboot
     // ESP.deepSleep(86400000000); // 1 Day
-    ESP.deepSleep(300000000); // 5 Minutes
+    ESP.deepSleep(300000000);  // 5 Minutes
     ESP.restart();
   }
 
-  if(forceSetup){
+  if (forceSetup) {
     ESP.restart();
   }
 
-  WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP
+  WiFi.mode(WIFI_STA);  // explicitly set mode, esp defaults to STA+AP
 }
 
-void setupOTAUpdate(){
+void setupOTAUpdate() {
   wm.getWiFiPass().toCharArray(wifiPassword, 32);
   ArduinoOTA.setHostname(hostname);
   ArduinoOTA.setPassword(wifiPassword);
 
-  #ifdef DEBUG
-    ArduinoOTA.onStart([]() {
-      Serial.println("Start");
-    });
-    ArduinoOTA.onEnd([]() {
-      Serial.println("\nEnd");
-    });
-    ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-    });
-    ArduinoOTA.onError([](ota_error_t error) {
-      Serial.printf("Error[%u]: ", error);
-      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-      else if (error == OTA_END_ERROR) Serial.println("End Failed");
-    });
-  #endif
+#ifdef DEBUG
+  ArduinoOTA.onStart([]() {
+    Serial.println("Start");
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR)
+      Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR)
+      Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR)
+      Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR)
+      Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR)
+      Serial.println("End Failed");
+  });
+#endif
   ArduinoOTA.begin();
-  #ifdef DEBUG
-    Serial.println("OTA ready");
-  #endif
+#ifdef DEBUG
+  Serial.println("OTA ready");
+#endif
 }
 
-void setupDisplay(){
+void setupDisplay() {
   Wire.begin(PIN_SDA, PIN_SCK);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
   display.setTextColor(WHITE);
-  display.dim(true); // lower brightness
+  display.dim(true);  // lower brightness
 }
 
-void setupRTC(){
-  if (! rtc.begin()) {
+void setupRTC() {
+  if (!rtc.begin()) {
     // Couldn't find RTC
     display.clearDisplay();
     display.setCursor(5, 12);
@@ -455,63 +464,63 @@ unsigned int loopStartTime;
 bool wifiActive = false;
 
 void setup() {
-  #ifdef DEBUG
-    Serial.begin(DEBUG_SPEED);
-    Serial.print("\n");
-    Serial.setDebugOutput(true);
-    Serial.println("STARTED IN DEBUG MODE");
-  #endif
+#ifdef DEBUG
+  Serial.begin(DEBUG_SPEED);
+  Serial.print("\n");
+  Serial.setDebugOutput(true);
+  Serial.println("STARTED IN DEBUG MODE");
+#endif
 
-  #ifdef PIN_BUTTON
-    pinMode(PIN_BUTTON, INPUT);
-    attachInterrupt(digitalPinToInterrupt(PIN_BUTTON), handleButtonInterrupt, INTERRUPT_BUTTON);
-  #endif
+#ifdef PIN_BUTTON
+  pinMode(PIN_BUTTON, INPUT);
+  attachInterrupt(digitalPinToInterrupt(PIN_BUTTON), handleButtonInterrupt, INTERRUPT_BUTTON);
+#endif
 
-  #ifdef PIN_SENSOR
-    pinMode(PIN_SENSOR, INPUT);
-    attachInterrupt(digitalPinToInterrupt(PIN_SENSOR), handleSensorInterrupt, INTERRUPT_SENSOR);
-  #endif
+#ifdef PIN_SENSOR
+  pinMode(PIN_SENSOR, INPUT);
+  attachInterrupt(digitalPinToInterrupt(PIN_SENSOR), handleSensorInterrupt, INTERRUPT_SENSOR);
+#endif
 
   setupDisplay();
 
   setupFilesystem();
 
-  #ifdef DEBUG
-    Serial.println("setupFilesystem finished");
-  #endif
+#ifdef DEBUG
+  Serial.println("setupFilesystem finished");
+#endif
 
   setupRTC();
 
   display.clearDisplay();
   display.setCursor(0, 14);
   display.setTextSize(2);
-  #ifdef PIN_SENSOR
-    // WIFI stuff disabled during interrupt & sleep experiments
-    // need to be manually reenabled when woken up from light-sleep
-    if(false && digitalRead(PIN_SENSOR) != SENSOR_TRIGGERED){
-      wifiActive = true;
-      display.print("WiFi...");
-      display.display();
-      setupWifi();
-      setupOTAUpdate();
-      display.clearDisplay();
-      display.setCursor(0, 14);
-      display.print("WiFi UP");
-      display.display();
-    }else{
-      WiFi.mode(WIFI_OFF);
-      WiFi.forceSleepBegin();
-      wifiActive = false;
-      display.print("WiFi DOWN");
-      display.display();
-    }
-  #else
-    WiFi.mode(WIFI_OFF);
-    wifiActive = false;
-    display.setTextSize(1);
-    display.print("NO WIFI MODE");
+#ifdef PIN_SENSOR
+  // WIFI stuff disabled during interrupt & sleep experiments
+  // need to be manually reenabled when woken up from light-sleep
+  if (false && digitalRead(PIN_SENSOR) != SENSOR_TRIGGERED) {
+    wifiActive = true;
+    display.print("WiFi...");
     display.display();
-  #endif
+    setupWifi();
+    setupOTAUpdate();
+    display.clearDisplay();
+    display.setCursor(0, 14);
+    display.print("WiFi UP");
+    display.display();
+  } else {
+    WiFi.mode(WIFI_OFF);
+    WiFi.forceSleepBegin();
+    wifiActive = false;
+    display.print("WiFi DOWN");
+    display.display();
+  }
+#else
+  WiFi.mode(WIFI_OFF);
+  wifiActive = false;
+  display.setTextSize(1);
+  display.print("NO WIFI MODE");
+  display.display();
+#endif
 
   delay(1000);
 
@@ -521,7 +530,6 @@ void setup() {
 //*************************
 // LOOP
 //*************************
-
 
 // unsigned long lastWakeUp = 0;
 // unsigned long lastHandledSensorInterrupt = 0;

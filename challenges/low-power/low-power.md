@@ -17,3 +17,4 @@ This also raised the question how to communicte between the two IC's. I plan to 
 [Low Power Demo](https://github.com/esp8266/Arduino/tree/master/libraries/esp8266/examples/LowPowerDemo)
 [Sleep WakeUp Cause ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/sleep_modes.html#checking-sleep-wakeup-cause)
 [Espressif Low Power Solutions](https://www.espressif.com/sites/default/files/9b-esp8266-low_power_solutions_en_0.pdf)
+[Low Power Attiny45 i2C Sensor](https://github.com/DzikuVx/attiny_photoresistor_i2c)
