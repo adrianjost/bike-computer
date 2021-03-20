@@ -1,10 +1,7 @@
 // #define DEBUG
-#define SENSOR_PIN 2
+#define SENSOR_PIN 3
 #define SENSOR_INTERRUPT RISING
-#define SENSOR_TRIGGERED HIGH
-#define INTERRUPT_THROTTLE_COOLDOWN 100
-#define VALIDATION_LOOPS 12
-#define INTERRUPT_DEBOUNCE_THRESHOLD 0.75
+#define INTERRUPT_THROTTLE_COOLDOWN 50
 
 #define WHEEL_CIRCUMFERENCE 2100
 
@@ -18,24 +15,11 @@
 unsigned long data[DATA_SIZE];
 byte lastWriteIndex = 0;
 
-bool validateSensorState(bool expected) {
-  byte valid = 0;
-  for (byte i = 0; i < VALIDATION_LOOPS; i++) {
-    if (digitalRead(SENSOR_PIN) == expected) {
-      valid += 1;
-    }
-  }
-  return valid > (VALIDATION_LOOPS * INTERRUPT_DEBOUNCE_THRESHOLD);
-}
-
 void handleInterrupt() {
   unsigned long interruptTime = millis();
   if (interruptTime - data[lastWriteIndex] < INTERRUPT_THROTTLE_COOLDOWN) {
     return;
   }
-  // if (!validateSensorState(SENSOR_TRIGGERED)) {
-  //   return;
-  // }
   lastWriteIndex = (lastWriteIndex + 1) % DATA_SIZE;
   data[lastWriteIndex] = interruptTime;
 }
