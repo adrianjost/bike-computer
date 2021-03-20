@@ -23,8 +23,8 @@
 - [ ] [low battery warning](./challenges/low-battery-warning/low-battery-warning.md)
 - [x] [self-power-off-circuit](./challenges/self-power-off-circuit/self-power-off-circuit.md)
 - [ ] [measure speed with Attiny45](./challenges/speed-measurement/speed-measurement.md)
-- [ ] [Attiny45 i2c communication with ESP8266](./uC-Communication/uC-Communication.md)
-- [ ] Hardware Debounce Reed-Switch
+- [x] [Attiny45 i2c communication with ESP8266](./uC-Communication/uC-Communication.md)
+- [ ] ~Hardware Debounce Reed-Switch~ (irrelevant, using digital HALL-Sensor)
 - [ ] Attiny45 Watchdog Sleep for given time (but continue speed detection)
 - [ ] activate WiFi only on certain pages
 - [ ] store trips on some kind of storage
