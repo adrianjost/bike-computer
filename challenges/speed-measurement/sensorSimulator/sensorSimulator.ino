@@ -1,4 +1,5 @@
-#define SENSOR_PIN 2
+#define SENSOR_PIN 3
+#define DUTY_CYCLE 5
 #define SENSOR_HIGH 10
 #define WHEEL_CIRCUMFERENCE 2100
 
@@ -14,15 +15,27 @@
 #define SENSOR_DURATION_90 84
 #define SENSOR_DURATION_99 75
 
+#define DEBUG
+
 void setup() {
   pinMode(SENSOR_PIN, OUTPUT);
+#ifdef DEBUG
+  Serial.begin(9600);
+#endif
 }
 
-void simulateSpeed(int roundDuration) {
+void simulateSpeed(int periodMs) {
+  int dutyCycleMs = DUTY_CYCLE * periodMs;
   digitalWrite(SENSOR_PIN, HIGH);
-  delay(SENSOR_HIGH);
+#ifdef DEBUG
+  Serial.print(1);
+#endif
+  delayMicroseconds(dutyCycleMs * 1000);
   digitalWrite(SENSOR_PIN, LOW);
-  delay(roundDuration - SENSOR_HIGH);
+#ifdef DEBUG
+  Serial.print(0);
+#endif
+  delayMicroseconds((periodMs - dutyCycleMs) * 1000);
 }
 
 void loop() {
