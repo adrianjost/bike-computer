@@ -34,26 +34,30 @@ void setup() {
 String message;
 
 void updateScreen() {
-  Wire.requestFrom(0x13, 2);  // request 2 bytes from slave device #0x13
+  Wire.requestFrom(0x4, 2);  // request 2 bytes from slave device #0x13
+  byte speed = 0;
+  byte second = 0;
+  byte read = 0;
+  while (Wire.available()) {
+    if (read == 0) {
+      speed = Wire.read();
+    } else if (read == 1) {
+      second = Wire.read();
+    } else {
+      Wire.read();
+    }
+    read++;
+  }
 
-  int i = 0;
-  unsigned int readout = 0;
+  byte battery = second & B00001111;
+  byte speedFraction = ((second & B11110000) >> 4);
 
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.println(millis());
-  while (Wire.available()) {
-    byte c = Wire.read();
-    display.println(c);
-    if (i == 0) {
-      readout = c;
-    } else {
-      readout = readout << 8;
-      readout = readout + c;
-    }
-    i++;
-  }
-  display.println(readout);
+  display.print(speed);
+  display.print(".");
+  display.println(speedFraction);
+  display.println(battery);
   display.display();
 }
 

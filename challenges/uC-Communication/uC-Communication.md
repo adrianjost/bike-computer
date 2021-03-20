@@ -121,11 +121,9 @@ void loop() {
 
 ## i2C
 
-### Known Limitations
+![Attiny - Arduino i2C communication breadboard wire up](./i2c-wireup.png)
 
-- interrupts do not work while a communication is running
-- huge size, so the Attiny45 is already near his memory/flash limit
-- needs two additional pins on the ESP8266
+### Known Limitations
 
 ### Code
 
@@ -151,6 +149,65 @@ void loop() {
 void requestEvent() {
   digitalWrite(4, HIGH);
   TinyWireS.send(B11001101);
+}
+```
+
+#### ESP8266
+
+```arduino
+#define PIN_SDA 2
+#define PIN_SCK 14
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 32
+#define OLED_RESET 1
+
+#define MESSAGE_START_FLAG B11111111
+
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <SPI.h>
+#include <Wire.h>
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+void setup() {
+  Wire.begin(PIN_SDA, PIN_SCK);
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.clearDisplay();
+  display.display();
+  display.setTextColor(WHITE);
+  display.setTextSize(1);
+  display.dim(true);  // lower brightness
+
+  Serial.begin(9600);
+
+  display.invertDisplay(1);
+  delay(500);
+  display.invertDisplay(0);
+  delay(500);
+}
+
+String message;
+
+void updateScreen() {
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print("M: ");
+  display.println(millis());
+
+  Wire.requestFrom(0x4, 2);  // request 2 bytes from slave device #0x13
+  while (Wire.available()) {
+    byte c = Wire.read();
+    display.println(c);
+  }
+  display.display();
+}
+
+bool state = 0;
+void loop() {
+  updateScreen();
+  delay(2000);
 }
 ```
 
@@ -180,5 +237,7 @@ void loop() {
 
 ## Usefull Links / Tutorials / Resources
 
-https://thewanderingengineer.com/2014/02/17/attiny-i2c-slave/
-https://github.com/DzikuVx/attiny_photoresistor_i2c
+- [Attiny45 i2C light sensor](https://github.com/DzikuVx/attiny_photoresistor_i2c)
+- [Attiny45 i2C rpm sensor](https://forum.arduino.cc/index.php?topic=242767.0)
+- [Attiny45 as i2c slave setup](https://thewanderingengineer.com/2014/02/17/attiny-i2c-slave/)
+- [Attiny45 compatible i2c slave lib](https://github.com/rambo/TinyWire/tree/rollback/TinyWireS)

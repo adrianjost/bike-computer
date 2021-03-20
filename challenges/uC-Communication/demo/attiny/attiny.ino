@@ -29,16 +29,21 @@ Good Info For ATTiny45 With Arduino: http://highlowtech.org/?p=1695
 void setup() {
   TinyWireS.begin(I2C_SLAVE_ADDRESS);  // join i2c network
   TinyWireS.onRequest(requestEvent);   // Sets Functional to call on I2C request
-
-  pinMode(4, OUTPUT);
 }
 
 void loop() {
-  digitalWrite(4, LOW);
   TinyWireS_stop_check();
 }
 
+bool firstbyte = true;
 void requestEvent() {
-  digitalWrite(4, HIGH);
-  TinyWireS.send(B11001101);
+  unsigned long now = millis();
+  byte speed = (now / 1000) % 100;
+  byte speedDecimal = (now / 500) % 10;
+  byte battery = (now / 1000) % 4;
+
+  byte first = speed;
+  byte second = (speedDecimal << 4) | battery;
+  TinyWireS.send(first);
+  TinyWireS.send(second);
 }
