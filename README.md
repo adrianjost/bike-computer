@@ -25,7 +25,7 @@
 - [ ] [measure speed with Attiny45](./challenges/speed-measurement/speed-measurement.md)
 - [x] [Attiny45 i2c communication with ESP8266](./uC-Communication/uC-Communication.md)
 - [ ] ~Hardware Debounce Reed-Switch~ (irrelevant, using digital HALL-Sensor)
-- [ ] Attiny45 Watchdog Sleep for given time (but continue speed detection)
+- [ ] [Attiny45 Watchdog Sleep for given time (but continue speed detection)](./challenges/attiny-sleep/attiny-sleep.md)
 - [ ] activate WiFi only on certain pages
 - [ ] store trips on some kind of storage
 - [ ] implement API to download stories from device
