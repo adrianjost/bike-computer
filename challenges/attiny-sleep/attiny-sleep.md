@@ -143,5 +143,5 @@ void loop() {
 
 ## Usefull Links / Tutorials / Resources
 
-https://www.re-innovation.co.uk/docs/sleep-modes-on-attiny85/
-https://bigdanzblog.wordpress.com/2014/08/10/attiny85-wake-from-sleep-on-pin-state-change-code-example/
+- https://www.re-innovation.co.uk/docs/sleep-modes-on-attiny85/
+- https://bigdanzblog.wordpress.com/2014/08/10/attiny85-wake-from-sleep-on-pin-state-change-code-example/

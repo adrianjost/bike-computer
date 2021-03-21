@@ -27,6 +27,6 @@ ToDo:
 
 ## Usefull Links / Tutorials / Resources
 
-ESP-03 does not have an analog-read pin -> no direct level measurment
-https://www.electroschematics.com/low-battery-indicator/
-[1S LiPo Low Voltage indicator](https://www.flitetest.com/articles/diy-micro-1s-low-voltage-warning)
+- ESP-03 does not have an analog-read pin -> no direct level measurment
+- https://www.electroschematics.com/low-battery-indicator/
+- [1S LiPo Low Voltage indicator](https://www.flitetest.com/articles/diy-micro-1s-low-voltage-warning)

@@ -41,6 +41,9 @@ Note: Look for RPM implementations. Those can calculate the rotation duration ve
 | 9                                  | 18  | 64.8 |
 | 10                                 | 20  | 72.0 |
 
+https://chart-studio.plotly.com/create/?fid=adrianjost:1&fid=adrianjost:0
+
 ## Usefull Links / Tutorials / Resources
 
-[Online Plot Maker](https://chart-studio.plotly.com/create/#/) |
+- [Online Plot Maker](https://chart-studio.plotly.com/create/#/)
+- [Arduino Pulse Generator](https://create.arduino.cc/projecthub/mariogianota/bit-banging-pwm-pulse-generator-on-any-digital-pin-5eb2f9?ref=part&ref_id=8233&offset=61)
