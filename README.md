@@ -32,5 +32,3 @@
 - [ ] [6 - 10h active runtime](./challenges/low-power/low-power.md)
 
 ## Usefull Links / Tutorials / Resources
-
-[Online Plot Maker](https://chart-studio.plotly.com/create/#/)

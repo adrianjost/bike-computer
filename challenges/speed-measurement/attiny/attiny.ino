@@ -1,13 +1,13 @@
 // #define DEBUG
 #define SENSOR_PIN 3
 #define SENSOR_INTERRUPT RISING
-#define INTERRUPT_THROTTLE_COOLDOWN 50
+#define INTERRUPT_THROTTLE_COOLDOWN 50000  // 50
 
-#define WHEEL_CIRCUMFERENCE 2100
+#define WHEEL_CIRCUMFERENCE 2000
 
-#define DATA_SIZE 20
+#define DATA_SIZE 30
 #define USED_VALUES_FOR_CALC 10
-#define MAX_VALUE_AGE 3000
+#define MAX_VALUE_AGE 4000000  // 3000
 #define CLEAR_DATA                       \
   for (byte i = 0; i < DATA_SIZE; ++i) { \
     data[i] = 0;                         \
@@ -16,7 +16,7 @@ unsigned long data[DATA_SIZE];
 byte lastWriteIndex = 0;
 
 void handleInterrupt() {
-  unsigned long interruptTime = millis();
+  unsigned long interruptTime = micros();
   if (interruptTime - data[lastWriteIndex] < INTERRUPT_THROTTLE_COOLDOWN) {
     return;
   }
@@ -54,9 +54,10 @@ void updateSpeed() {
 #endif
 
   if (start == end || usedValues == 0) {
-    speed = 0;
+    speed = 0.0;
   } else {
-    speed = (float)((usedValues * WHEEL_CIRCUMFERENCE) / (end - start)) * 3.6;
+    // speed = (float)((usedValues * WHEEL_CIRCUMFERENCE) / ((float)(end - start))) * 3.6;
+    speed = (float)((usedValues * WHEEL_CIRCUMFERENCE) / ((float)(end - start) / 1000)) * 3.6;
   }
 }
 
@@ -71,6 +72,7 @@ void setup() {
   Serial.print(" ");
   Serial.println(__TIME__);
 #endif
+  delay(MAX_VALUE_AGE / 1000);  // give buffer time to fill with some values
 }
 
 void loop() {

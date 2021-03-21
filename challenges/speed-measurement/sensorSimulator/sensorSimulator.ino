@@ -1,74 +1,44 @@
-#define SENSOR_PIN 3
-#define DUTY_CYCLE 5
-#define SENSOR_HIGH 10
-#define WHEEL_CIRCUMFERENCE 2100
-
-#define SENSOR_DURATION_05 1512
-#define SENSOR_DURATION_10 756
-#define SENSOR_DURATION_20 378
-#define SENSOR_DURATION_30 252
-#define SENSOR_DURATION_40 189
-#define SENSOR_DURATION_50 151
-#define SENSOR_DURATION_60 126
-#define SENSOR_DURATION_70 108
-#define SENSOR_DURATION_80 95
-#define SENSOR_DURATION_90 84
-#define SENSOR_DURATION_99 75
-
-#define DEBUG
+/**
+ * A simple PWM/signal generator that permits setting of the frequency
+ * in Herz and the pulse width (duty cycle). It uses a bit banging method
+ * to generate the signal. This sketch can also be used to generate a PWM 
+ * signal on any digital pin.
+ * 
+ * Author: Mario Gianota July 2020
+ */
+#define OUTPUT_PIN 2    // PWM/Signal output pin
+#define DUTY_CYCLE 5.0  // Duty cycle (pulse width) percentage
 
 void setup() {
-  pinMode(SENSOR_PIN, OUTPUT);
-#ifdef DEBUG
-  Serial.begin(9600);
-#endif
+  pinMode(OUTPUT_PIN, OUTPUT);
 }
 
-void simulateSpeed(int periodMs) {
-  int dutyCycleMs = DUTY_CYCLE * periodMs;
-  digitalWrite(SENSOR_PIN, HIGH);
-#ifdef DEBUG
-  Serial.print(1);
-#endif
-  delayMicroseconds(dutyCycleMs * 1000);
-  digitalWrite(SENSOR_PIN, LOW);
-#ifdef DEBUG
-  Serial.print(0);
-#endif
-  delayMicroseconds((periodMs - dutyCycleMs) * 1000);
+void writeFrequency(float frequency) {  // Frequency in Herz
+  // Calculate the period and the amount of time the output is on for (HIGH) and
+  // off for (LOW).
+  double period = 1000000 / frequency;
+  double offFor = period - (period * (DUTY_CYCLE / 100));
+  double onFor = period - offFor;
+
+  if (period > 16383) {
+    // If the period is greater than 16383 then use the millisecond timer delay,
+    // otherwise use the microsecond timer delay. Currently, the largest value that
+    // will produce an accurate delay for the microsecond timer is 16383.
+
+    digitalWrite(OUTPUT_PIN, HIGH);
+    delay((long)onFor / 1000);
+
+    digitalWrite(OUTPUT_PIN, LOW);
+    delay((long)offFor / 1000);
+  } else {
+    digitalWrite(OUTPUT_PIN, HIGH);
+    delayMicroseconds((long)onFor);
+
+    digitalWrite(OUTPUT_PIN, LOW);
+    delayMicroseconds((long)offFor);
+  }
 }
 
 void loop() {
-  switch ((millis() / 10000) % 8) {
-    case 0:
-      simulateSpeed(SENSOR_DURATION_05);
-      break;
-    case 1:
-      simulateSpeed(SENSOR_DURATION_10);
-      break;
-    case 2:
-      simulateSpeed(SENSOR_DURATION_20);
-      break;
-    case 3:
-      simulateSpeed(SENSOR_DURATION_30);
-      break;
-    case 4:
-      simulateSpeed(SENSOR_DURATION_40);
-      break;
-    case 5:
-      simulateSpeed(SENSOR_DURATION_50);
-      break;
-    case 6:
-      simulateSpeed(SENSOR_DURATION_60);
-      break;
-    case 7:
-      simulateSpeed(SENSOR_DURATION_70);
-      break;
-    case 8:
-      simulateSpeed(SENSOR_DURATION_80);
-      break;
-    case 9:
-      simulateSpeed(SENSOR_DURATION_90);
-      break;
-  }
+  writeFrequency(((float)(((millis() / 10000) % 20) + 1) / 4));
 }
