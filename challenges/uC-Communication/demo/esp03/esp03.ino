@@ -1,11 +1,9 @@
 #define PIN_SDA 2
-#define PIN_SCK 14
+#define PIN_SCK 0
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 32
 #define OLED_RESET 1
-
-#define MESSAGE_START_FLAG B11111111
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>

@@ -18,6 +18,9 @@ I want to save data from my trips for further analysis. This should include basi
 
 ## Usefull Links / Tutorials / Resources
 
+REMEMBER!! you can use only 8.3 file, for example a file like config.txt is accepted but configuration.text no, because max file lenght is 8 character and extension 3.
+
 - https://www.mischianti.org/2019/12/15/how-to-use-sd-card-with-esp8266-and-arduino/
 - https://simple-circuit.com/arduino-sd-card-interfacing-example/
 - [SD-Card Power Consumption](https://forum.arduino.cc/index.php?topic=132303.0)
+- [ESP8266 Pin Functions](https://i2.wp.com/randomnerdtutorials.com/wp-content/uploads/2019/05/ESP8266-WeMos-D1-Mini-pinout-gpio-pin.png?quality=100&strip=all&ssl=1)
