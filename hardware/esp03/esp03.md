@@ -8,6 +8,8 @@
 - black background - needs PULL-DOWN resistor (LOW at boot)
 - GPIO16 = GPIO18 (= RESET, when Jumper near VCC/Antenna is connected)
 
+> Unfortunetly I was yet unable to get WiFi working on the chip I have
+
 ## DEV-Breakout Board Pins
 
 ![ESP-03 Breakout Board](./ESP-03-breakout-board.jpg)
