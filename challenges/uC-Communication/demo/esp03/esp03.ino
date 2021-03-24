@@ -40,23 +40,26 @@ void setup() {
 String message;
 
 void updateScreen() {
-  Wire.requestFrom(0x4, 2);  // request 2 bytes from slave device #0x13
+  Wire.requestFrom(0x4, 3);  // request 2 bytes from slave device #0x13
   byte speed = 0;
-  byte second = 0;
+  byte batteryAndSpeedFraction = 0;
+  byte rotationCount = 0;
   byte read = 0;
   while (Wire.available()) {
     if (read == 0) {
       speed = Wire.read();
     } else if (read == 1) {
-      second = Wire.read();
+      batteryAndSpeedFraction = Wire.read();
+    } else if (read == 2) {
+      rotationCount = Wire.read();
     } else {
       Wire.read();
     }
     read++;
   }
 
-  byte battery = second & B00001111;
-  byte speedFraction = ((second & B11110000) >> 4);
+  byte battery = batteryAndSpeedFraction & B00001111;
+  byte speedFraction = ((batteryAndSpeedFraction & B11110000) >> 4);
 
   display.clearDisplay();
   display.setCursor(0, 0);
@@ -64,6 +67,7 @@ void updateScreen() {
   display.print(".");
   display.println(speedFraction);
   display.println(battery);
+  display.println(rotationCount);
   display.display();
 }
 

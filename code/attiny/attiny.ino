@@ -1,11 +1,15 @@
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <util/atomic.h>
 
 #include "TinyWireS.h"  //For I2C on ATTiny's
 
 #define I2C_SLAVE_ADDRESS 0x4  // Address of this device as an I2C slave
 #define PIN_LED 1
 #define INTERRUPT_PIN_SCL PCINT2
+#define INTERRUPT_PIN_SENSOR PCINT4
+#define INTERRUPT_VECTOR_PIN_SCL PCINT2_vect
+#define INTERRUPT_VECTOR_PIN_SENSOR PCINT4_vect
 
 // Routines to set and claer bits (used in the sleep code)
 #ifndef cbi
@@ -18,6 +22,7 @@
 // Variables for the Sleep/power down modes:
 volatile boolean f_wdt = true;
 volatile boolean sending = false;
+volatile byte rotationCountSinceLastSend = 0;
 
 void setup() {
   TinyWireS.begin(I2C_SLAVE_ADDRESS);  // join i2c network
@@ -47,30 +52,40 @@ void loop() {
 }
 
 void requestEvent() {
-  sending = true;
   digitalWrite(PIN_LED, HIGH);
+
+  sending = true;
+
+  // TODO use real speed calculation
   unsigned long now = millis();
   byte speed = (now / 1000) % 100;
   byte speedDecimal = (now / 500) % 10;
   byte battery = (now / 1000) % 4;
 
-  byte first = speed;
-  byte second = (speedDecimal << 4) | battery;
-  TinyWireS.send(first);
-  TinyWireS.send(second);
+  byte rotationCount = 0;
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    rotationCount = rotationCountSinceLastSend;
+    rotationCountSinceLastSend = 0;
+  }
 
+  TinyWireS.send(speed);
+  TinyWireS.send((speedDecimal << 4) | battery);
+  TinyWireS.send(rotationCount);
+
+  sending = false;
+
+  // TODO remove debug blink (everything below, inside this function)
   delay(50);
   digitalWrite(PIN_LED, LOW);
-  sending = false;
 }
 
 // set system into the sleep state
-// system wakes up when wtchdog is timed out
 void system_sleep() {
   pinMode(PIN_LED, INPUT);  // Set the ports to be inputs - saves more power
 
   sbi(GIMSK, PCIE);               // Enable Pin Change Interrupts
-  sbi(PCMSK, INTERRUPT_PIN_SCL);  // Use I2C SCL Pin to wakeup
+  sbi(PCMSK, INTERRUPT_PIN_SCL);  // Used to wakeup
+  // sbi(PCMSK, INTERRUPT_PIN_SENSOR);  // Used to wakeup
 
   cbi(ADCSRA, ADEN);  // switch Analog to Digitalconverter OFF
 
@@ -110,10 +125,18 @@ void setup_watchdog(int ii) {
 }
 
 // Watchdog Interrupt Service / is executed when watchdog timed out
-ISR(WDT_vect) {
+ISR(WDT_vect, ISR_NOBLOCK) {
+  // ISR(WDT_vect) {
   f_wdt = true;
 }
 
 ISR(PCINT0_vect) {
   sending = true;
 }
+// ISR(INTERRUPT_VECTOR_PIN_SCL) {
+//   sending = true;
+// }
+
+// ISR(INTERRUPT_VECTOR_PIN_SENSOR) {
+//   rotationCountSinceLastSend++;
+// }
