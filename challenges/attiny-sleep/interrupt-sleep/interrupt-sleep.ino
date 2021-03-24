@@ -26,7 +26,7 @@ void setup() {
 
 void sleep() {
   sbi(GIMSK, PCIE);    // Enable Pin Change Interrupts
-  sbi(PCMSK, PCINT4);  // Use PB4 as interrupt pin
+  sbi(PCMSK, PCINT4);  // Use PCINTX as interrupt pin
   cbi(ADCSRA, ADEN);   // switch Analog to Digitalconverter OFF
 
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);  // replaces above statement

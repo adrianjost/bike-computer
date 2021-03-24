@@ -7,6 +7,7 @@
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <ESP8266WiFi.h>
 #include <SPI.h>
 #include <Wire.h>
 
@@ -27,6 +28,13 @@ void setup() {
   delay(500);
   display.invertDisplay(0);
   delay(500);
+
+  // disable wifi
+  wifi_station_disconnect();
+  wifi_set_opmode(NULL_MODE);
+  wifi_set_sleep_type(MODEM_SLEEP_T);
+  wifi_fpm_open();
+  wifi_fpm_do_sleep(0xFFFFFFF);
 }
 
 String message;
@@ -62,5 +70,5 @@ void updateScreen() {
 bool state = 0;
 void loop() {
   updateScreen();
-  delay(2000);
+  delay(1000);
 }
