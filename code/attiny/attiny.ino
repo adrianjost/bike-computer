@@ -51,13 +51,13 @@ void loop() {
   //   delay(750);
   //   digitalWrite(PIN_LED, LOW);
   // }
-  // if (!sending) {
-  system_sleep();  // Send the unit to sleep
-  digitalWrite(PIN_LED, HIGH);
-  delay(50);
-  digitalWrite(PIN_LED, LOW);
-  delay(50);
-  // }
+  if (!sending) {
+    system_sleep();  // Send the unit to sleep
+    digitalWrite(PIN_LED, HIGH);
+    delay(50);
+    digitalWrite(PIN_LED, LOW);
+    delay(50);
+  }
 }
 
 void requestEvent() {
@@ -89,50 +89,31 @@ void requestEvent() {
 
 // set system into the sleep state
 void system_sleep() {
-  sbi(GIMSK, PCIE);    // Enable Pin Change Interrupts
-  sbi(PCMSK, PCINT2);  // Use PCINTX as interrupt pin
-  sbi(PCMSK, PCINT4);  // Use PCINTX as interrupt pin
-  cbi(ADCSRA, ADEN);   // switch Analog to Digitalconverter OFF
+  pinMode(PIN_LED, INPUT);  // Set the ports to be inputs - saves more power
+
+  sbi(GIMSK, PCIE);                              // Enable Pin Change Interrupts
+  sbi(PCMSK, digitalPinToPCMSKbit(PIN_SCL));     // Use PCINTX as interrupt pin
+  sbi(PCMSK, digitalPinToPCMSKbit(PIN_SENSOR));  // Use PCINTX as interrupt pin
+
+  cbi(ADCSRA, ADEN);  // switch Analog to Digitalconverter OFF
 
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);  // replaces above statement
+  cli();                                // Disable interrupts
+  if (!sending) {
+    sleep_enable();  // Sets the Sleep Enable bit in the MCUCR Register (SE BIT)
+    sei();           // Enable interrupts
+    sleep_cpu();     // sleep
+  }
+  cli();                                         // Disable interrupts
+  cbi(PCMSK, digitalPinToPCMSKbit(PIN_SCL));     // Turn off PCINTX as interrupt pin
+  cbi(PCMSK, digitalPinToPCMSKbit(PIN_SENSOR));  // Turn off PCINTX as interrupt pin
+  sleep_disable();                               // Clear SE bit
 
-  sleep_enable();  // Sets the Sleep Enable bit in the MCUCR Register (SE BIT)
-  sei();           // Enable interrupts
-  sleep_cpu();     // sleep
+  sbi(ADCSRA, ADEN);  // switch Analog to Digitalconverter ON
 
-  cli();               // Disable interrupts
-  cbi(PCMSK, PCINT2);  // Turn off PCINTX as interrupt pin
-  cbi(PCMSK, PCINT4);  // Turn off PCINTX as interrupt pin
-  sleep_disable();     // Clear SE bit
-  sbi(ADCSRA, ADEN);   // switch Analog to Digitalconverter ON
+  pinMode(PIN_LED, OUTPUT);  // Set the ports to be output again
 
-  sei();  // Enable interrupts                             // Enable interrupts
-
-  // // pinMode(PIN_LED, INPUT);  // Set the ports to be inputs - saves more power
-
-  // // sbi(GIMSK, PCIE);                              // Enable Pin Change Interrupts
-  // // sbi(PCMSK, digitalPinToPCMSKbit(PIN_SCL));     // Used to wakeup
-  // // sbi(PCMSK, digitalPinToPCMSKbit(PIN_SENSOR));  // Used to wakeup
-
-  // sbi(GIMSK, PCIE);
-  // sbi(PCMSK, PCINT4);
-
-  // // cbi(ADCSRA, ADEN);  // switch Analog to Digitalconverter OFF
-
-  // // go to sleep, except if there is a new I2C request
-  // set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-  // cli();
-  // if (!sending) {
-  //   sleep_enable();
-  //   sei();
-  //   sleep_cpu();
-  //   sleep_disable();
-  // }
-  // sei();
-
-  // // sbi(ADCSRA, ADEN);  // switch Analog to Digitalconverter ON
-
-  // // pinMode(PIN_LED, OUTPUT);  // Set the ports to be output again
+  sei();  // Enable interrupts
 }
 
 // 0=16ms, 1=32ms,2=64ms,3=128ms,4=250ms,5=500ms
@@ -162,39 +143,10 @@ ISR(WDT_vect) {
 
 // onyl one ISR for all Pin Interrupts exists
 // => detect manually what has changed
-volatile byte oldPort = 0x00;
-byte interruptMask = (1 << PIN_SCL) | (1 << PIN_SENSOR);
 ISR(PCINT0_vect) {
-  rotationCountSinceLastSend += 1;
-
-  // // get the new pin states for port
-  // byte newPort = INTERRUPT_PIN_PORT;
-  // // byte newPort = *portInputRegister(digitalPinToPort(PIN_SENSOR));
-
-  // // compare with the old value to detect a rising or falling
-  // byte change = newPort ^ oldPort;
-
-  // // detect rising pins
-  // byte rising = change & newPort;
-
-  // // detect falling pins
-  // // byte falling = change & oldPort; // not used
-
-  // // check which pins are triggered, compared with the settings
-  // byte changed = 0x00;
-  // changed |= (rising & interruptMask);
-  // // changed |= (falling & interruptMask);
-
-  // // save the new state for next comparison
-  // oldPort = newPort;
-
-  // // interrupt on PIN_SCL
-  // // if (changed & (1 << PIN_SCL)) {
-  // //   sending = true;
-  // // }
-
-  // // interrupt on PIN_SENSOR
-  // if (changed & (1 << PIN_SENSOR)) {
-  //   rotationCountSinceLastSend += 1;
-  // }
+  // interrupt on PIN_SENSOR
+  // we don't need to do any change analysis, because the interrupt is only triggered when the uC sleeps, and thus a new wakeup call is triggered. The uC should not go to sleep, while the sensor is still HIGH
+  if (INTERRUPT_PIN_PORT & (1 << PIN_SENSOR)) {
+    rotationCountSinceLastSend += 1;
+  }
 }
