@@ -11,10 +11,7 @@
 #define PIN_SCL 2
 #define PIN_SDA 0
 
-#define INTERRUPT_PIN_SCL PCINT2
-#define INTERRUPT_PIN_SENSOR PCINT4
-#define INTERRUPT_VECTOR_PIN_SCL PCINT2_vect
-#define INTERRUPT_VECTOR_PIN_SENSOR PCINT4_vect
+#define INTERRUPT_PIN_PORT PINB
 
 // Routines to set and claer bits (used in the sleep code)
 #ifndef cbi
@@ -29,11 +26,13 @@ volatile boolean f_wdt = true;
 volatile boolean sending = false;
 volatile byte rotationCountSinceLastSend = 0;
 
+// float speed = 36.4;
+
 void setup() {
   TinyWireS.begin(I2C_SLAVE_ADDRESS);  // join i2c network
   TinyWireS.onRequest(requestEvent);   // Sets Functional to call on I2C request
 
-  setup_watchdog(8);
+  // setup_watchdog(8);
 
   pinMode(PIN_LED, OUTPUT);
   pinMode(PIN_SENSOR, INPUT);
@@ -45,34 +44,43 @@ void setup() {
 
 void loop() {
   TinyWireS_stop_check();
-  if (f_wdt == true) {  // wait for timed out watchdog / flag is set when a watchdog timeout occurs
-    f_wdt = false;      // reset flag
+  // if (f_wdt == true) {  // wait for timed out watchdog / flag is set when a watchdog timeout occurs
+  //   f_wdt = false;      // reset flag
 
-    digitalWrite(PIN_LED, HIGH);
-    delay(500);
-    digitalWrite(PIN_LED, LOW);
-  }
-  if (!sending) {
-    system_sleep();  // Send the unit to sleep
-  }
+  //   digitalWrite(PIN_LED, HIGH);
+  //   delay(750);
+  //   digitalWrite(PIN_LED, LOW);
+  // }
+  // if (!sending) {
+  system_sleep();  // Send the unit to sleep
+  digitalWrite(PIN_LED, HIGH);
+  delay(50);
+  digitalWrite(PIN_LED, LOW);
+  delay(50);
+  // }
 }
 
 void requestEvent() {
   sending = true;
 
-  // TODO use real speed calculation
+  // byte speedBase = (byte)speed;
+  // byte speedDecimal = (speed * 10) - (speedBase * 10);
+
+  // TODO use real battery calculation
   unsigned long now = millis();
-  byte speed = (now / 1000) % 100;
+  byte speedBase = (now / 1000) % 100;
   byte speedDecimal = (now / 500) % 10;
   byte battery = (now / 1000) % 4;
 
   byte rotationCount = 0;
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
     rotationCount = rotationCountSinceLastSend;
-    rotationCountSinceLastSend = 0;  // TODO comment in
+    rotationCountSinceLastSend = 0;
   }
 
-  TinyWireS.send(speed);
+  // TODO send interpolated rotations per fixed interval instead of speed
+  // so we don't need to know the wheel circumference here
+  TinyWireS.send(speedBase);
   TinyWireS.send((speedDecimal << 4) | battery);
   TinyWireS.send(rotationCount);
 
@@ -81,28 +89,50 @@ void requestEvent() {
 
 // set system into the sleep state
 void system_sleep() {
-  pinMode(PIN_LED, INPUT);  // Set the ports to be inputs - saves more power
+  sbi(GIMSK, PCIE);    // Enable Pin Change Interrupts
+  sbi(PCMSK, PCINT2);  // Use PCINTX as interrupt pin
+  sbi(PCMSK, PCINT4);  // Use PCINTX as interrupt pin
+  cbi(ADCSRA, ADEN);   // switch Analog to Digitalconverter OFF
 
-  sbi(GIMSK, PCIE);                              // Enable Pin Change Interrupts
-  sbi(PCMSK, digitalPinToPCMSKbit(PIN_SCL));     // Used to wakeup
-  sbi(PCMSK, digitalPinToPCMSKbit(PIN_SENSOR));  // Used to wakeup
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN);  // replaces above statement
 
-  cbi(ADCSRA, ADEN);  // switch Analog to Digitalconverter OFF
+  sleep_enable();  // Sets the Sleep Enable bit in the MCUCR Register (SE BIT)
+  sei();           // Enable interrupts
+  sleep_cpu();     // sleep
 
-  // go to sleep, except if there is a new I2C request
-  set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-  cli();
-  if (!sending) {
-    sleep_enable();
-    sei();
-    sleep_cpu();
-    sleep_disable();
-  }
-  sei();
+  cli();               // Disable interrupts
+  cbi(PCMSK, PCINT2);  // Turn off PCINTX as interrupt pin
+  cbi(PCMSK, PCINT4);  // Turn off PCINTX as interrupt pin
+  sleep_disable();     // Clear SE bit
+  sbi(ADCSRA, ADEN);   // switch Analog to Digitalconverter ON
 
-  sbi(ADCSRA, ADEN);  // switch Analog to Digitalconverter ON
+  sei();  // Enable interrupts                             // Enable interrupts
 
-  pinMode(PIN_LED, OUTPUT);  // Set the ports to be output again
+  // // pinMode(PIN_LED, INPUT);  // Set the ports to be inputs - saves more power
+
+  // // sbi(GIMSK, PCIE);                              // Enable Pin Change Interrupts
+  // // sbi(PCMSK, digitalPinToPCMSKbit(PIN_SCL));     // Used to wakeup
+  // // sbi(PCMSK, digitalPinToPCMSKbit(PIN_SENSOR));  // Used to wakeup
+
+  // sbi(GIMSK, PCIE);
+  // sbi(PCMSK, PCINT4);
+
+  // // cbi(ADCSRA, ADEN);  // switch Analog to Digitalconverter OFF
+
+  // // go to sleep, except if there is a new I2C request
+  // set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+  // cli();
+  // if (!sending) {
+  //   sleep_enable();
+  //   sei();
+  //   sleep_cpu();
+  //   sleep_disable();
+  // }
+  // sei();
+
+  // // sbi(ADCSRA, ADEN);  // switch Analog to Digitalconverter ON
+
+  // // pinMode(PIN_LED, OUTPUT);  // Set the ports to be output again
 }
 
 // 0=16ms, 1=32ms,2=64ms,3=128ms,4=250ms,5=500ms
@@ -125,7 +155,7 @@ void setup_watchdog(int ii) {
 }
 
 // Watchdog Interrupt Service / is executed when watchdog timed out
-ISR(WDT_vect, ISR_NOBLOCK) {
+ISR(WDT_vect) {
   // ISR(WDT_vect) {
   f_wdt = true;
 }
@@ -133,37 +163,38 @@ ISR(WDT_vect, ISR_NOBLOCK) {
 // onyl one ISR for all Pin Interrupts exists
 // => detect manually what has changed
 volatile byte oldPort = 0x00;
-byte interruptMask = (1 << PIN_SCL) | (1 << INTERRUPT_PIN_SENSOR);
+byte interruptMask = (1 << PIN_SCL) | (1 << PIN_SENSOR);
 ISR(PCINT0_vect) {
-  digitalWrite(PIN_LED, !digitalRead(PIN_LED));
+  rotationCountSinceLastSend += 1;
 
-  // get the new pin states for port
-  byte newPort = *portInputRegister(digitalPinToPort(INTERRUPT_PIN_SENSOR)) | *portInputRegister(digitalPinToPort(INTERRUPT_PIN_SCL));
+  // // get the new pin states for port
+  // byte newPort = INTERRUPT_PIN_PORT;
+  // // byte newPort = *portInputRegister(digitalPinToPort(PIN_SENSOR));
 
-  // compare with the old value to detect a rising or falling
-  byte change = newPort ^ oldPort;
+  // // compare with the old value to detect a rising or falling
+  // byte change = newPort ^ oldPort;
 
-  // detect rising pins
-  byte rising = change & newPort;
+  // // detect rising pins
+  // byte rising = change & newPort;
 
-  // detect falling pins
-  // byte falling = change & oldPort; // not used
+  // // detect falling pins
+  // // byte falling = change & oldPort; // not used
 
-  // check which pins are triggered, compared with the settings
-  byte changed = 0x00;
-  changed |= (rising & interruptMask);
-  // changed |= (falling & interruptMask);
+  // // check which pins are triggered, compared with the settings
+  // byte changed = 0x00;
+  // changed |= (rising & interruptMask);
+  // // changed |= (falling & interruptMask);
 
-  // save the new state for next comparison
-  oldPort = newPort;
+  // // save the new state for next comparison
+  // oldPort = newPort;
 
-  // interrupt on PIN_SCL
-  // if (changed & (1 << PIN_SCL)) {
-  //   sending = true;
+  // // interrupt on PIN_SCL
+  // // if (changed & (1 << PIN_SCL)) {
+  // //   sending = true;
+  // // }
+
+  // // interrupt on PIN_SENSOR
+  // if (changed & (1 << PIN_SENSOR)) {
+  //   rotationCountSinceLastSend += 1;
   // }
-
-  // interrupt on PIN_SENSOR
-  if (rising & (1 << PIN_SENSOR)) {
-    rotationCountSinceLastSend += 1;
-  }
 }
