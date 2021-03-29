@@ -1,4 +1,5 @@
 #include <avr/interrupt.h>
+#include <avr/power.h>
 #include <avr/sleep.h>
 #include <util/atomic.h>
 
@@ -32,10 +33,14 @@ void setup() {
   TinyWireS.begin(I2C_SLAVE_ADDRESS);  // join i2c network
   TinyWireS.onRequest(requestEvent);   // Sets Functional to call on I2C request
 
-  // setup_watchdog(8);
+  setup_watchdog(8);
 
   pinMode(PIN_LED, OUTPUT);
   pinMode(PIN_SENSOR, INPUT);
+
+  sbi(GIMSK, PCIE);                              // Enable Pin Change Interrupts
+  sbi(PCMSK, digitalPinToPCMSKbit(PIN_SCL));     // Use PCINTX as interrupt pin
+  sbi(PCMSK, digitalPinToPCMSKbit(PIN_SENSOR));  // Use PCINTX as interrupt pin
 
   digitalWrite(PIN_LED, HIGH);
   delay(100);
@@ -44,19 +49,20 @@ void setup() {
 
 void loop() {
   TinyWireS_stop_check();
-  // if (f_wdt == true) {  // wait for timed out watchdog / flag is set when a watchdog timeout occurs
-  //   f_wdt = false;      // reset flag
+  if (f_wdt == true) {  // wait for timed out watchdog / flag is set when a watchdog timeout occurs
+    f_wdt = false;      // reset flag
 
-  //   digitalWrite(PIN_LED, HIGH);
-  //   delay(750);
-  //   digitalWrite(PIN_LED, LOW);
-  // }
+    digitalWrite(PIN_LED, HIGH);
+    delay(750);
+    digitalWrite(PIN_LED, LOW);
+  }
   if (!sending) {
     system_sleep();  // Send the unit to sleep
     digitalWrite(PIN_LED, HIGH);
     delay(50);
     digitalWrite(PIN_LED, LOW);
     delay(50);
+    delay(900);
   }
 }
 
@@ -67,7 +73,7 @@ void requestEvent() {
   // byte speedDecimal = (speed * 10) - (speedBase * 10);
 
   // TODO use real battery calculation
-  unsigned long now = millis();
+  unsigned long now = micros() / 1000;
   byte speedBase = (now / 1000) % 100;
   byte speedDecimal = (now / 500) % 10;
   byte battery = (now / 1000) % 4;
@@ -89,31 +95,29 @@ void requestEvent() {
 
 // set system into the sleep state
 void system_sleep() {
+  // TODO: timer (micros, millis) are not increasing during sleep
+
+  // prepeare for sleep
   pinMode(PIN_LED, INPUT);  // Set the ports to be inputs - saves more power
 
-  sbi(GIMSK, PCIE);                              // Enable Pin Change Interrupts
-  sbi(PCMSK, digitalPinToPCMSKbit(PIN_SCL));     // Use PCINTX as interrupt pin
-  sbi(PCMSK, digitalPinToPCMSKbit(PIN_SENSOR));  // Use PCINTX as interrupt pin
+  set_sleep_mode(SLEEP_MODE_IDLE);  // replaces above statement
+  power_adc_disable();
+  power_timer1_disable();  // timer0 is required to be alive for micros to work
 
-  cbi(ADCSRA, ADEN);  // switch Analog to Digitalconverter OFF
-
-  set_sleep_mode(SLEEP_MODE_PWR_DOWN);  // replaces above statement
-  cli();                                // Disable interrupts
+  cli();  // Disable interrupts
   if (!sending) {
     sleep_enable();  // Sets the Sleep Enable bit in the MCUCR Register (SE BIT)
     sei();           // Enable interrupts
     sleep_cpu();     // sleep
   }
-  cli();                                         // Disable interrupts
-  cbi(PCMSK, digitalPinToPCMSKbit(PIN_SCL));     // Turn off PCINTX as interrupt pin
-  cbi(PCMSK, digitalPinToPCMSKbit(PIN_SENSOR));  // Turn off PCINTX as interrupt pin
-  sleep_disable();                               // Clear SE bit
 
-  sbi(ADCSRA, ADEN);  // switch Analog to Digitalconverter ON
-
+  // Wake-Up
+  cli();                     // Disable interrupts
+  sleep_disable();           // Clear SE bit
+  power_adc_enable();        // switch Analog to Digitalconverter ON
+  power_timer1_enable();     // switch everything on
   pinMode(PIN_LED, OUTPUT);  // Set the ports to be output again
-
-  sei();  // Enable interrupts
+  sei();                     // Enable interrupts
 }
 
 // 0=16ms, 1=32ms,2=64ms,3=128ms,4=250ms,5=500ms
@@ -145,7 +149,7 @@ ISR(WDT_vect) {
 // => detect manually what has changed
 ISR(PCINT0_vect) {
   // interrupt on PIN_SENSOR
-  // we don't need to do any change analysis, because the interrupt is only triggered when the uC sleeps, and thus a new wakeup call is triggered. The uC should not go to sleep, while the sensor is still HIGH
+  // we don't need to do any change analysis, because duplicate calls get filtered by the throttling. Also the interrupt is only triggered when the uC sleeps, and thus a new wakeup call is triggered. For that reason, we do potentially miss the reset of the sensor and would be unable to detect a change when the sensor is triggered next time.
   if (INTERRUPT_PIN_PORT & (1 << PIN_SENSOR)) {
     rotationCountSinceLastSend += 1;
   }

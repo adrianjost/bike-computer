@@ -10,14 +10,23 @@ Reduce power consumption of Attiny as much as possible while maintaining
 
 ## Attiny Power Consumption
 
-| Mode                | CPU Frequenzy | Power Consumption |
-| ------------------- | ------------- | ----------------- |
-| Regular             | 1 MHz         | 1.7mA             |
-| Regular             | 8 MHz         | 6.6 mA            |
-| Regular             | 16 MHz        | 12 mA             |
-| SLEEP_MODE_PWR_DOWN | 1 MHz         | 6 uA              |
-| SLEEP_MODE_PWR_DOWN | 8 MHz         | 6 uA              |
-| SLEEP_MODE_PWR_DOWN | 16 MHz        | 6 uA              |
+All measurments assume a 5V power supply
+
+| Mode                | CPU Frequenzy | Power Consumption      |
+| ------------------- | ------------- | ---------------------- |
+| Regular             | 1 MHz         | 1.7mA                  |
+| Regular             | 8 MHz         | 6.6 mA                 |
+| Regular             | 16 MHz        | 12.0 mA                |
+| SLEEP_MODE_IDLE\*   | 1 MHz         | 2.3 mA (seems to high) |
+| SLEEP_MODE_IDLE\*   | 8 MHz         | 3.2 mA                 |
+| SLEEP_MODE_IDLE\*   | 16 MHz        | 5.5 mA                 |
+| SLEEP_MODE_PWR_DOWN | 1 MHz         | 6 uA                   |
+| SLEEP_MODE_PWR_DOWN | 8 MHz         | 6 uA                   |
+| SLEEP_MODE_PWR_DOWN | 16 MHz        | 6 uA                   |
+
+\* adc & timer1 were were disabled manually.
+
+in `SLEEP_MODE_PWR_DOWN` and `SLEEP_MODE_ADC` the internsal clock is stopped and millis/micros are stopped. For that reason, they are not suitable for measuring speed.
 
 ## Code Pieces
 
@@ -145,3 +154,7 @@ void loop() {
 
 - https://www.re-innovation.co.uk/docs/sleep-modes-on-attiny85/
 - https://bigdanzblog.wordpress.com/2014/08/10/attiny85-wake-from-sleep-on-pin-state-change-code-example/
+- [available power saving helpers](https://wolles-elektronikkiste.de/en/sleep-modes-and-power-management)
+- [available sleep modes](https://www.re-innovation.co.uk/docs/sleep-modes-on-attiny85/)
+- [sleep modes](http://www.gammon.com.au/forum/?id=11497)
+- [attiny low power sensor example](http://www.technoblogy.com/show?KX0)
