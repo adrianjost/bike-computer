@@ -22,10 +22,24 @@
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 #endif
 
+#define WHEEL_CIRCUMFERENCE 2000  // TODO get rid of this, check comment were data is send
+
+#define INTERRUPT_THROTTLE_COOLDOWN 50000  // 50
+#define DATA_SIZE 30
+#define USED_VALUES_FOR_CALC 10
+#define MAX_VALUE_AGE 4000000  // 3000
+#define CLEAR_DATA                       \
+  for (byte i = 0; i < DATA_SIZE; ++i) { \
+    data[i] = 0;                         \
+  };
+
 // Variables for the Sleep/power down modes:
 volatile boolean f_wdt = true;
 volatile boolean sending = false;
 volatile byte rotationCountSinceLastSend = 0;
+// speed measurment
+volatile unsigned long data[DATA_SIZE];
+volatile byte lastWriteIndex = 0;
 
 // float speed = 36.4;
 
@@ -62,20 +76,45 @@ void loop() {
     delay(50);
     digitalWrite(PIN_LED, LOW);
     delay(50);
-    delay(900);
+  }
+}
+
+float speed = 0;
+void updateSpeed() {
+  byte endIndex = lastWriteIndex;
+  unsigned long end = data[endIndex];
+  byte startIndex;
+  unsigned long start;
+  byte usedValues = 0;
+  for (byte i = 1; i <= USED_VALUES_FOR_CALC; i++) {
+    byte valIndex = (endIndex + DATA_SIZE - i) % DATA_SIZE;
+    unsigned long val = data[valIndex];
+    if ((end - val) > (MAX_VALUE_AGE)) {
+      // value too old
+      break;
+    }
+    usedValues++;
+    startIndex = valIndex;
+    start = val;
+  }
+  if (start == end || usedValues == 0) {
+    speed = 0.0;
+  } else {
+    speed = (float)((usedValues * WHEEL_CIRCUMFERENCE) / ((float)(end - start) / 1000)) * 3.6;
   }
 }
 
 void requestEvent() {
   sending = true;
 
-  // byte speedBase = (byte)speed;
-  // byte speedDecimal = (speed * 10) - (speedBase * 10);
+  updateSpeed();
+  byte speedBase = (byte)speed;
+  byte speedDecimal = (speed * 10) - (speedBase * 10);
 
   // TODO use real battery calculation
   unsigned long now = micros() / 1000;
-  byte speedBase = (now / 1000) % 100;
-  byte speedDecimal = (now / 500) % 10;
+  // byte speedBase = (now / 1000) % 100;
+  // byte speedDecimal = (now / 500) % 10;
   byte battery = (now / 1000) % 4;
 
   byte rotationCount = 0;
@@ -151,6 +190,12 @@ ISR(PCINT0_vect) {
   // interrupt on PIN_SENSOR
   // we don't need to do any change analysis, because duplicate calls get filtered by the throttling. Also the interrupt is only triggered when the uC sleeps, and thus a new wakeup call is triggered. For that reason, we do potentially miss the reset of the sensor and would be unable to detect a change when the sensor is triggered next time.
   if (INTERRUPT_PIN_PORT & (1 << PIN_SENSOR)) {
+    unsigned long interruptTime = micros();
+    if (interruptTime - data[lastWriteIndex] < INTERRUPT_THROTTLE_COOLDOWN) {
+      return;
+    }
+    lastWriteIndex = (lastWriteIndex + 1) % DATA_SIZE;
+    data[lastWriteIndex] = interruptTime;
     rotationCountSinceLastSend += 1;
   }
 }
