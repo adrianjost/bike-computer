@@ -22,9 +22,7 @@
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 #endif
 
-#define WHEEL_CIRCUMFERENCE 2000  // TODO get rid of this, check comment were data is send
-
-#define INTERRUPT_THROTTLE_COOLDOWN 50000  // 50
+#define INTERRUPT_THROTTLE_COOLDOWN 75000  // 50
 #define DATA_SIZE 30
 #define USED_VALUES_FOR_CALC 10
 #define MAX_VALUE_AGE 4000000  // 3000
@@ -79,7 +77,7 @@ void loop() {
   }
 }
 
-float speed = 0;
+byte speed = 0;
 void updateSpeed() {
   byte endIndex = lastWriteIndex;
   unsigned long end = data[endIndex];
@@ -98,9 +96,9 @@ void updateSpeed() {
     start = val;
   }
   if (start == end || usedValues == 0) {
-    speed = 0.0;
+    speed = 0;
   } else {
-    speed = (float)((usedValues * WHEEL_CIRCUMFERENCE) / ((float)(end - start) / 1000)) * 3.6;
+    speed = (byte)((usedValues * 20) / ((float)(end - start) / 1000000));
   }
 }
 
@@ -108,13 +106,9 @@ void requestEvent() {
   sending = true;
 
   updateSpeed();
-  byte speedBase = (byte)speed;
-  byte speedDecimal = (speed * 10) - (speedBase * 10);
 
   // TODO use real battery calculation
   unsigned long now = micros() / 1000;
-  // byte speedBase = (now / 1000) % 100;
-  // byte speedDecimal = (now / 500) % 10;
   byte battery = (now / 1000) % 4;
 
   byte rotationCount = 0;
@@ -123,11 +117,8 @@ void requestEvent() {
     rotationCountSinceLastSend = 0;
   }
 
-  // TODO send interpolated rotations per fixed interval instead of speed
-  // so we don't need to know the wheel circumference here
-  TinyWireS.send(speedBase);
-  TinyWireS.send((speedDecimal << 4) | battery);
-  TinyWireS.send(rotationCount);
+  TinyWireS.send(speed);
+  TinyWireS.send((rotationCount << 4) | battery);
 
   sending = false;
 }
