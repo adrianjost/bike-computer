@@ -63,17 +63,10 @@ void loop() {
   TinyWireS_stop_check();
   if (f_wdt == true) {  // wait for timed out watchdog / flag is set when a watchdog timeout occurs
     f_wdt = false;      // reset flag
-
-    digitalWrite(PIN_LED, HIGH);
-    delay(750);
-    digitalWrite(PIN_LED, LOW);
+    // TODO: wakeup esp8266
   }
   if (!sending) {
-    system_sleep();  // Send the unit to sleep
-    digitalWrite(PIN_LED, HIGH);
-    delay(50);
-    digitalWrite(PIN_LED, LOW);
-    delay(50);
+    sleep();  // Send the unit to sleep
   }
 }
 
@@ -96,7 +89,7 @@ void updateSpeed() {
     start = val;
   }
   if (start == end || usedValues == 0) {
-    speed = 0;
+    speed = 0;  // TODO: does not trigger somehow if I don't send any new signal, the speed stays unchanged
   } else {
     speed = (byte)((usedValues * 20) / ((float)(end - start) / 1000000));
   }
@@ -124,7 +117,7 @@ void requestEvent() {
 }
 
 // set system into the sleep state
-void system_sleep() {
+void sleep() {
   // TODO: timer (micros, millis) are not increasing during sleep
 
   // prepeare for sleep
