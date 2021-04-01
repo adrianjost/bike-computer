@@ -175,9 +175,10 @@ ISR(PCINT0_vect) {
     if (interruptTime - data[lastWriteIndex] < INTERRUPT_THROTTLE_COOLDOWN) {
       return;
     }
-    // TODO [#6]: make operations atomic
-    lastWriteIndex = (lastWriteIndex + 1) % DATA_SIZE;
-    data[lastWriteIndex] = interruptTime;
-    rotationCountSinceLastSend += 1;
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+      lastWriteIndex = (lastWriteIndex + 1) % DATA_SIZE;
+      data[lastWriteIndex] = interruptTime;
+      rotationCountSinceLastSend += 1;
+    }
   }
 }
