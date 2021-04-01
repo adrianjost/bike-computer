@@ -9,6 +9,10 @@
 #define OUTPUT_PIN 2    // PWM/Signal output pin
 #define DUTY_CYCLE 5.0  // Duty cycle (pulse width) percentage
 
+#define STEP_MILLISECONDS 7500
+#define STEP_SIZE 0.5
+#define STEP_MAX 10
+
 void setup() {
   pinMode(OUTPUT_PIN, OUTPUT);
 }
@@ -40,5 +44,5 @@ void writeFrequency(float frequency) {  // Frequency in Herz
 }
 
 void loop() {
-  writeFrequency(((float)(((millis() / 10000) % 20) + 1) / 4));
+  writeFrequency(((float)(((millis() / STEP_MILLISECONDS) % (byte)(STEP_MAX / STEP_SIZE)) + 1) * STEP_SIZE));
 }
