@@ -12,7 +12,7 @@ Version: 1.0.0
 
 // Attiny
 #define ATTINY_ADDRESS 0x4
-// TODO [$6065a6f934f7ce00072bab41]: make WHEEL_CIRCUMFERENCE adjustable by user - step 1: use a variable
+// TODO [#8]: make WHEEL_CIRCUMFERENCE adjustable by user - step 1: use a variable
 #define WHEEL_CIRCUMFERENCE 2000
 
 // HIGH, LOW
@@ -167,7 +167,7 @@ void fetchData() {
   batteryLevel = batteryAndRotationCount & B00001111;
   tripRotations += ((batteryAndRotationCount & B11110000) >> 4);
   if (rPer20s != 0) {
-    // TODO [$6065a6f934f7ce00072bab42]: use real seconds from RTC instead of this unprecise method, the approach might need an adjustment, because the precision of the clock is limited to seconds. Using a longer period should be considered.
+    // TODO [#9]: use real seconds from RTC instead of this unprecise method, the approach might need an adjustment, because the precision of the clock is limited to seconds. Using a longer period should be considered.
     tripSeconds++;
   }
 }
@@ -215,7 +215,7 @@ void showCurrentTrip() {
   unsigned long tripM = (tripRotations * WHEEL_CIRCUMFERENCE) / 1000;
   unsigned long tripKm = tripM / 1000;
   display.print("d: ");
-  // TODO [$6065a6f934f7ce00072bab43]: use km or add switch between m/km depending on distance
+  // TODO [#10]: use km or add switch between m/km depending on distance
   display.print(tripM);
   display.println(" m");
 
