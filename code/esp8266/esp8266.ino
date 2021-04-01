@@ -244,7 +244,7 @@ void showCurrentTrip() {
   display.print("v: ");
   display.print(avgSpeedBase);
   display.print(".");
-  display.print((byte)(avgSpeed * 10) - (avgSpeedBase * 10));
+  display.print((byte)((avgSpeed * 10) - (avgSpeedBase * 10)));
   display.print(" km/h");
 
   drawMenuPosition(menuItem);
