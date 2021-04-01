@@ -98,7 +98,11 @@ void requestEvent() {
 
   updateSpeed();
 
-  // TODO use real battery calculation
+  // TODO: read real battery voltage
+  //
+  // - [ ] use analog input to measure voltage
+  // - [ ] map voltage to calibration data because min & max depend on battery
+  // - [ ] calculating the current battery level
   unsigned long now = micros() / 1000;
   byte battery = (now / 1000) % 4;
 
@@ -141,7 +145,7 @@ void sleep() {
 }
 
 // 0=16ms, 1=32ms,2=64ms,3=128ms,4=250ms,5=500ms
-// 6=1 sec,7=2 sec, 8=4 sec, 9= 8sec
+// 6=1 sec,7=2 sec, 8=4 sec, 9=8sec
 void setup_watchdog(int ii) {
   byte bb;
   int ww;
@@ -161,7 +165,6 @@ void setup_watchdog(int ii) {
 
 // Watchdog Interrupt Service / is executed when watchdog timed out
 ISR(WDT_vect) {
-  // ISR(WDT_vect) {
   f_wdt = true;
 }
 
