@@ -7,8 +7,8 @@
 
 #define I2C_SLAVE_ADDRESS 0x4  // Address of this device as an I2C slave
 
-#define PIN_LED 1
 #define PIN_SENSOR 4
+#define PIN_WAKEUP_ESP 1
 #define PIN_SCL 2
 #define PIN_SDA 0
 
@@ -39,31 +39,29 @@ volatile byte rotationCountSinceLastSend = 0;
 volatile unsigned long data[DATA_SIZE];
 volatile byte lastWriteIndex = 0;
 
-// float speed = 36.4;
-
 void setup() {
   TinyWireS.begin(I2C_SLAVE_ADDRESS);  // join i2c network
   TinyWireS.onRequest(requestEvent);   // Sets Functional to call on I2C request
 
-  setup_watchdog(8);
+  setup_watchdog(6);
 
-  pinMode(PIN_LED, OUTPUT);
+  pinMode(PIN_WAKEUP_ESP, OUTPUT);
+  digitalWrite(PIN_WAKEUP_ESP, LOW);
+
   pinMode(PIN_SENSOR, INPUT);
 
   sbi(GIMSK, PCIE);                              // Enable Pin Change Interrupts
   sbi(PCMSK, digitalPinToPCMSKbit(PIN_SCL));     // Use PCINTX as interrupt pin
   sbi(PCMSK, digitalPinToPCMSKbit(PIN_SENSOR));  // Use PCINTX as interrupt pin
-
-  digitalWrite(PIN_LED, HIGH);
-  delay(100);
-  digitalWrite(PIN_LED, LOW);
 }
 
 void loop() {
   TinyWireS_stop_check();
   if (f_wdt == true) {  // wait for timed out watchdog / flag is set when a watchdog timeout occurs
     f_wdt = false;      // reset flag
-    // TODO [#1]: wakeup esp8266
+    digitalWrite(PIN_WAKEUP_ESP, HIGH);
+    delay(50);
+    digitalWrite(PIN_WAKEUP_ESP, LOW);
   }
   if (!sending) {
     sleep();  // Send the unit to sleep
@@ -118,11 +116,10 @@ void requestEvent() {
 
 // set system into the sleep state
 void sleep() {
-  // TODO [#2]: timer (micros, millis) are not increasing during sleep
-
   // prepeare for sleep
-  pinMode(PIN_LED, INPUT);  // Set the ports to be inputs - saves more power
+  pinMode(PIN_WAKEUP_ESP, INPUT);  // Set the ports to be inputs - saves more power
 
+  // timers (micros, millis) are not increasing in other sleep modes because the clock get's stopped
   set_sleep_mode(SLEEP_MODE_IDLE);  // replaces above statement
   power_adc_disable();
   power_timer1_disable();  // timer0 is required to be alive for micros to work
@@ -135,12 +132,12 @@ void sleep() {
   }
 
   // Wake-Up
-  cli();                     // Disable interrupts
-  sleep_disable();           // Clear SE bit
-  power_adc_enable();        // switch Analog to Digitalconverter ON
-  power_timer1_enable();     // switch everything on
-  pinMode(PIN_LED, OUTPUT);  // Set the ports to be output again
-  sei();                     // Enable interrupts
+  cli();                            // Disable interrupts
+  sleep_disable();                  // Clear SE bit
+  power_adc_enable();               // switch Analog to Digitalconverter ON
+  power_timer1_enable();            // switch everything on
+  pinMode(PIN_WAKEUP_ESP, OUTPUT);  // Set the ports to be output again
+  sei();                            // Enable interrupts
 }
 
 // 0=16ms, 1=32ms,2=64ms,3=128ms,4=250ms,5=500ms
@@ -178,6 +175,7 @@ ISR(PCINT0_vect) {
     if (interruptTime - data[lastWriteIndex] < INTERRUPT_THROTTLE_COOLDOWN) {
       return;
     }
+    // TODO: make operations atomic
     lastWriteIndex = (lastWriteIndex + 1) % DATA_SIZE;
     data[lastWriteIndex] = interruptTime;
     rotationCountSinceLastSend += 1;

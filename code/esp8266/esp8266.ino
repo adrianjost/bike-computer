@@ -6,6 +6,7 @@ Version: 1.0.0
 // DEVICE CONFIGURATION
 
 #define PIN_BUTTON 12
+#define PIN_WAKEUP_INTERVAL 13
 #define PIN_SDA 2
 #define PIN_SCK 0
 
@@ -18,6 +19,7 @@ Version: 1.0.0
 
 // only LOLEVEL or HILEVEL interrupts work, no edge, that's an SDK or CPU limitation
 #define WAKEUP_BUTTON GPIO_PIN_INTR_LOLEVEL
+#define WAKEUP_INTERVAL GPIO_PIN_INTR_HILEVEL
 
 // CHANGE, RISING, FALLING
 #define INTERRUPT_BUTTON RISING
@@ -108,23 +110,23 @@ void timedLightSleep(unsigned int sleepMs) {
   delay(sleepMs + 1);                 // delay needs to be 1 mS longer than sleep or it only goes into Modem Sleep
 }
 
-void sleep(unsigned int sleepMs) {
-  // TODO [#3]: use real sleep mode and wakeup by attiny
-  delay(sleepMs);
-  return;
+void forcedLightSleep() {
+  WiFi.mode(WIFI_OFF);  // you must turn the modem off; using disconnect won't work
+  wifi_fpm_set_sleep_type(LIGHT_SLEEP_T);
+#ifdef PIN_BUTTON
+  gpio_pin_wakeup_enable(GPIO_ID_PIN(PIN_BUTTON), WAKEUP_BUTTON);
+#endif
+#ifdef PIN_WAKEUP_INTERVAL
+  gpio_pin_wakeup_enable(GPIO_ID_PIN(PIN_WAKEUP_INTERVAL), WAKEUP_INTERVAL);
+#endif
+  // wifi_fpm_set_wakeup_cb(wakeupCallback); // Set wakeup callback (optional)
+  wifi_fpm_open();
+  wifi_fpm_do_sleep(0xFFFFFFF);  // only 0xFFFFFFF, any other value and it won't disconnect the RTC timer
+  delay(10);                     // it goes to sleep during this delay() and waits for an interrupt
+}
 
-  unsigned long now = millis();
-  if (now - lastButtonInterrupt < LOW_POWER_DELAY) {
-    // we are active, keep everything alive
-    return;
-    // if(duration < LOW_POWER_DELAY){
-    //   delay(sleepMs);
-    // }else{
-    //   delay(LOW_POWER_DELAY);
-    // }
-  } else {
-    timedLightSleep(sleepMs);
-  }
+void sleep() {
+  forcedLightSleep();
 }
 
 //*************************
@@ -197,10 +199,6 @@ void showSpeed() {
   display.setCursor(102, 20);
   display.setTextSize(1);
   display.print("km/h");
-
-  display.setCursor(100, 0);
-  display.setTextSize(1);
-  display.print(tripRotations);
 
   drawMenuPosition(menuItem);
 
@@ -295,11 +293,11 @@ void updateScreen() {
       break;
     }
     case 1: {
-      showDateTime();
+      showCurrentTrip();
       break;
     }
     case 2: {
-      showCurrentTrip();
+      showDateTime();
       break;
     }
     default:
@@ -573,5 +571,5 @@ void setup() {
 void loop() {
   fetchData();
   updateScreen();
-  sleep(750);
+  sleep();
 }
