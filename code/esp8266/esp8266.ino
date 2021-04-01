@@ -109,7 +109,7 @@ void timedLightSleep(unsigned int sleepMs) {
 }
 
 void sleep(unsigned int sleepMs) {
-  // TODO: use real sleep mode and wakeup by attiny
+  // TODO [$60658aa48fa6db0007d06763]: use real sleep mode and wakeup by attiny
   delay(sleepMs);
   return;
 
@@ -239,8 +239,8 @@ void showCurrentTrip() {
   }
   display.println(s);
 
-  // TODO: simplify mathematics
-  // TODO: extract avgSpeed calculation into global scope to be reused on current speed screen
+  // TODO [$60658aa48fa6db0007d06764]: simplify mathematics
+  // TODO [$60658aa48fa6db0007d06765]: extract avgSpeed calculation into global scope to be reused on current speed screen
   float avgSpeed = (float)(((tripRotations * WHEEL_CIRCUMFERENCE) / tripSeconds) / 1000.0) * 3.6;
   byte avgSpeedBase = (byte)avgSpeed;
   display.print("v: ");

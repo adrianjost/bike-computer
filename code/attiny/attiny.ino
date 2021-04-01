@@ -63,7 +63,7 @@ void loop() {
   TinyWireS_stop_check();
   if (f_wdt == true) {  // wait for timed out watchdog / flag is set when a watchdog timeout occurs
     f_wdt = false;      // reset flag
-    // TODO: wakeup esp8266
+    // TODO [$60658aa48fa6db0007d06761]: wakeup esp8266
   }
   if (!sending) {
     sleep();  // Send the unit to sleep
@@ -118,7 +118,7 @@ void requestEvent() {
 
 // set system into the sleep state
 void sleep() {
-  // TODO: timer (micros, millis) are not increasing during sleep
+  // TODO [$60658aa48fa6db0007d06762]: timer (micros, millis) are not increasing during sleep
 
   // prepeare for sleep
   pinMode(PIN_LED, INPUT);  // Set the ports to be inputs - saves more power
