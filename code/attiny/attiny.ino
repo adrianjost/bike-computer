@@ -98,7 +98,7 @@ void requestEvent() {
 
   updateSpeed();
 
-  // TODO: read real battery voltage
+  // TODO [$6065a24faecd480008c540fc]: read real battery voltage
   //
   // - [ ] use analog input to measure voltage
   // - [ ] map voltage to calibration data because min & max depend on battery
