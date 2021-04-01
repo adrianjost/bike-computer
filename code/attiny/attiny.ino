@@ -175,7 +175,7 @@ ISR(PCINT0_vect) {
     if (interruptTime - data[lastWriteIndex] < INTERRUPT_THROTTLE_COOLDOWN) {
       return;
     }
-    // TODO: make operations atomic
+    // TODO [$60659f4280ea8d0009e87a88]: make operations atomic
     lastWriteIndex = (lastWriteIndex + 1) % DATA_SIZE;
     data[lastWriteIndex] = interruptTime;
     rotationCountSinceLastSend += 1;
