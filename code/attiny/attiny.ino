@@ -23,9 +23,10 @@
 #endif
 
 #define INTERRUPT_THROTTLE_COOLDOWN 75000  // 50
-#define DATA_SIZE 30
+#define DATA_SIZE 25
 #define USED_VALUES_FOR_CALC 10
-#define MAX_VALUE_AGE 4000000  // 3000
+#define MAX_VALUE_AGE 4000000
+#define MAX_LATEST_VALUE_AGE 1000000
 #define CLEAR_DATA                       \
   for (byte i = 0; i < DATA_SIZE; ++i) { \
     data[i] = 0;                         \
@@ -72,22 +73,24 @@ byte speed = 0;
 void updateSpeed() {
   byte endIndex = lastWriteIndex;
   unsigned long end = data[endIndex];
-  byte startIndex;
+  byte startIndex = endIndex;
   unsigned long start;
   byte usedValues = 0;
-  for (byte i = 1; i <= USED_VALUES_FOR_CALC; i++) {
-    byte valIndex = (endIndex + DATA_SIZE - i) % DATA_SIZE;
-    unsigned long val = data[valIndex];
-    if ((end - val) > (MAX_VALUE_AGE)) {
-      // value too old
-      break;
+  if (micros() - end <= MAX_LATEST_VALUE_AGE) {
+    for (byte i = 1; i <= USED_VALUES_FOR_CALC; i++) {
+      byte valIndex = (endIndex + DATA_SIZE - i) % DATA_SIZE;
+      unsigned long val = data[valIndex];
+      if ((end - val) > (MAX_VALUE_AGE)) {
+        // value too old
+        break;
+      }
+      usedValues++;
+      startIndex = valIndex;
+      start = val;
     }
-    usedValues++;
-    startIndex = valIndex;
-    start = val;
   }
   if (start == end || usedValues == 0) {
-    speed = 0;  // TODO: does not trigger somehow if I don't send any new signal, the speed stays unchanged
+    speed = 0;
   } else {
     speed = (byte)((usedValues * 20) / ((float)(end - start) / 1000000));
   }
