@@ -6,7 +6,7 @@ name: Process TODO comments
     branches:
       - master
 jobs:
-  collectTODO:
+  todoComments:
     name: Collect TODO
     runs-on: ubuntu-latest
     steps:
