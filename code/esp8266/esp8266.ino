@@ -11,7 +11,7 @@ Version: 1.0.0
 
 // Attiny
 #define ATTINY_ADDRESS 0x4
-#define WHEEL_CIRCUMFERENCE 2000  // TODO make adjustable by user
+#define WHEEL_CIRCUMFERENCE 2000  // TODO: make WHEEL_CIRCUMFERENCE adjustable by user - step 1,:use a variable
 
 // HIGH, LOW
 #define BUTTON_PRESSED LOW
@@ -26,7 +26,7 @@ Version: 1.0.0
 #define SCREEN_HEIGHT 32
 #define OLED_RESET 1
 
-#define MENU_ITEMS 2
+#define MENU_ITEMS 3
 #define LOW_POWER_DELAY 1000
 
 // config storage
@@ -78,7 +78,8 @@ RTC_DS3231 rtc;
 // char wifiPassword[32] = "";
 
 float speed = 0.0;
-unsigned int sensorCount = 0;
+unsigned int tripRotations = 0;
+unsigned long tripSeconds = 0;
 byte batteryLevel = 0;
 
 volatile byte menuItem = 0;
@@ -108,7 +109,7 @@ void timedLightSleep(unsigned int sleepMs) {
 }
 
 void sleep(unsigned int sleepMs) {
-  // TODO use real sleep mode
+  // TODO: use real sleep mode and wakeup by attiny
   delay(sleepMs);
   return;
 
@@ -141,7 +142,7 @@ void handleButtonInterrupt() {
 }
 
 // float speed = 0.0;
-// unsigned int sensorCount = 0;
+// unsigned int tripRotations = 0;
 
 void fetchData() {
   Wire.requestFrom(ATTINY_ADDRESS, 2);
@@ -161,7 +162,10 @@ void fetchData() {
 
   speed = (float)(rPer20s * WHEEL_CIRCUMFERENCE * 3.6) / 20000.0;
   batteryLevel = batteryAndRotationCount & B00001111;
-  sensorCount += ((batteryAndRotationCount & B11110000) >> 4);
+  tripRotations += ((batteryAndRotationCount & B11110000) >> 4);
+  if (rPer20s != 0) {
+    tripSeconds++;  // TODO: use real seconds from RTC instead of this unprecise method, the approach might need an adjustment, because the precision of the clock is limited to seconds. Using a longer period should be considered.
+  }
 }
 
 //*************************
@@ -196,9 +200,56 @@ void showSpeed() {
 
   display.setCursor(100, 0);
   display.setTextSize(1);
-  display.print(sensorCount);
+  display.print(tripRotations);
 
-  drawMenuPosition(0);
+  drawMenuPosition(menuItem);
+
+  display.display();
+}
+
+void showCurrentTrip() {
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.setTextSize(1);
+
+  unsigned long tripM = (tripRotations * WHEEL_CIRCUMFERENCE) / 1000;
+  unsigned long tripKm = tripM / 1000;
+  display.print("d: ");
+  display.print(tripM);  // TODO: use km or add switch between m/km depending on distance
+  display.println(" m");
+
+  unsigned long tripMinutes = tripSeconds / 60;
+  unsigned long tripHours = tripMinutes / 60;
+  display.print("t: ");
+  byte h = tripHours % 60;
+  if (h <= 9) {
+    display.print("0");
+  }
+  display.print(h);
+  display.print(":");
+  byte m = tripMinutes % 60;
+  if (m <= 9) {
+    display.print("0");
+  }
+  display.print(m);
+  display.print(":");
+  byte s = tripSeconds % 60;
+  if (s <= 9) {
+    display.print("0");
+  }
+  display.println(s);
+
+  // TODO: simplify mathematics
+  // TODO: extract avgSpeed calculation into global scope to be reused on current speed screen
+  float avgSpeed = (float)(((tripRotations * WHEEL_CIRCUMFERENCE) / tripSeconds) / 1000.0) * 3.6;
+  byte avgSpeedBase = (byte)avgSpeed;
+  display.print("v: ");
+  display.print(avgSpeedBase);
+  display.print(".");
+  display.print((byte)(avgSpeed * 10) - (avgSpeedBase * 10));
+  display.print(" km/h");
+
+  drawMenuPosition(menuItem);
 
   display.display();
 }
@@ -232,7 +283,7 @@ void showDateTime() {
   }
   display.print(second);
 
-  drawMenuPosition(1);
+  drawMenuPosition(menuItem);
 
   display.display();
 }
@@ -245,6 +296,10 @@ void updateScreen() {
     }
     case 1: {
       showDateTime();
+      break;
+    }
+    case 2: {
+      showCurrentTrip();
       break;
     }
     default:
