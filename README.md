@@ -2,16 +2,17 @@
 
 ## Plannes Features
 
-- [ ] current speed
-- [ ] current time
+- [x] current speed
+- [x] current time
 - [ ] max speed
 - [ ] total distance
 - [ ] current trip
-  - [ ] distance
+  - [x] distance
   - [ ] driving time
   - [ ] avg speed
 - [ ] wifi data export of all trips
 - [ ] auto-trip detection - save current trip on pause (10min timeout?)
+- [ ] setup of current time
 
 ### Optional Features
 
@@ -22,10 +23,10 @@
 
 - [ ] [low battery warning](./challenges/low-battery-warning/low-battery-warning.md)
 - [x] [self-power-off-circuit](./challenges/self-power-off-circuit/self-power-off-circuit.md)
-- [ ] [measure speed with Attiny45](./challenges/speed-measurement/speed-measurement.md)
+- [x] [measure speed with Attiny45](./challenges/speed-measurement/speed-measurement.md)
 - [x] [Attiny45 i2c communication with ESP8266](./uC-Communication/uC-Communication.md)
 - [ ] ~Hardware Debounce Reed-Switch~ (irrelevant, using digital HALL-Sensor)
-- [ ] [Attiny45 Watchdog Sleep for given time (but continue speed detection)](./challenges/attiny-sleep/attiny-sleep.md)
+- [x] [Attiny45 Watchdog Sleep for given time (but continue speed detection)](./challenges/attiny-sleep/attiny-sleep.md)
 - [ ] activate WiFi only on certain pages
 - [ ] [store trips on some kind of storage](./challenges/data-storage/data-storage.md)
 - [ ] implement API to download stories from device
