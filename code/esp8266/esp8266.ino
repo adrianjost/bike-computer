@@ -440,7 +440,7 @@ void showAvgSpeed() {
   // avg speed
   display.setTextSize(2);
   display.setCursor(5, 30);
-  // TODO [$60676eeab21d5400085a6c0b]: implement and use avg icon
+  // TODO [#14]: implement and use avg icon
   display.print("O");
   if (avgSpeed < 10) {
     display.setCursor(60, 30);
@@ -456,10 +456,10 @@ void showAvgSpeed() {
   display.println("km/h");
 
   // median speed
-  // TODO [$60676eeab21d5400085a6c0c]: calculate median speed
+  // TODO [#15]: calculate median speed
   // use an array with all possible speed values and count how often they appeared
   // eventually a precision without decimal places is ok to save memory.
-  // TODO [$60676eeab21d5400085a6c0d]: implement and use icon for median speed
+  // TODO [#16]: implement and use icon for median speed
   // display.setTextSize(2);
   // display.setCursor(5, 47);
   // display.print("M");
