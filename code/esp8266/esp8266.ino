@@ -26,10 +26,10 @@ Version: 1.0.0
 #define INTERRUPT_BUTTON RISING
 
 #define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 32
+#define SCREEN_HEIGHT 64
 #define OLED_RESET 1
 
-#define MENU_ITEMS 3
+#define MENU_ITEMS 2
 #define LOW_POWER_DELAY 1000
 
 // config storage
@@ -184,7 +184,6 @@ void drawMenuPosition(byte position) {
 void showSpeed() {
   byte base = speed;
 
-  display.clearDisplay();
   display.setTextSize(4);
 
   if (base >= 100) {
@@ -201,26 +200,115 @@ void showSpeed() {
   display.setCursor(102, 20);
   display.setTextSize(1);
   display.print("km/h");
-
-  drawMenuPosition(menuItem);
-
-  display.display();
 }
 
 void showCurrentTrip() {
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.setTextSize(1);
+  display.setCursor(0, 30);
+  display.setTextSize(2);
 
-  unsigned long tripM = (tripRotations * WHEEL_CIRCUMFERENCE) / 1000;
-  display.print("d: ");
-  display.print((float)(tripM) / 1000);
-  display.println(" km");
+  byte x;
+  byte y;
+  // draw arrow from top to bottom at 2x scale
+  x = 0;
+  y = 33;
+  display.drawPixel(x + 3, y + 0, WHITE);
+  display.drawPixel(x + 10, y + 0, WHITE);
+
+  display.drawFastHLine(x + 2, y + 1, 2, WHITE);
+  display.drawFastHLine(x + 10, y + 1, 2, WHITE);
+
+  display.drawFastHLine(x + 1, y + 2, 3, WHITE);
+  display.drawFastHLine(x + 10, y + 2, 3, WHITE);
+
+  display.drawFastHLine(x + 0, y + 3, 14, WHITE);
+  display.drawFastHLine(x + 0, y + 4, 14, WHITE);
+
+  display.drawFastHLine(x + 1, y + 5, 3, WHITE);
+  display.drawFastHLine(x + 10, y + 5, 3, WHITE);
+
+  display.drawFastHLine(x + 2, y + 6, 2, WHITE);
+  display.drawFastHLine(x + 10, y + 6, 2, WHITE);
+
+  display.drawPixel(x + 3, y + 7, WHITE);
+  display.drawPixel(x + 10, y + 7, WHITE);
+
+  // unsigned long tripM = (tripRotations * WHEEL_CIRCUMFERENCE) / 1000;
+  unsigned long tripM = 87654321;
+  unsigned long tripKm = tripM / 1000;
+  display.print("  ");
+  if (tripKm < 1) {
+    display.print(tripM);
+    display.println("m");
+  } else if (tripKm < 100) {  // 3 decimal places
+    if (tripKm < 10) {
+      display.print(" ");
+    }
+    display.print(tripKm);
+    display.print(".");
+    display.print(tripM - (tripKm * 1000));
+    display.println("km");
+  } else if (tripKm < 1000) {  // 2 decimal places
+    display.print(tripKm);
+    display.print(".");
+    display.print((tripM / 10) - (tripKm * 100));
+    display.println("km");
+  } else if (tripKm < 10000) {  // 1 decimal place
+    display.print(tripKm);
+    display.print(".");
+    display.print((tripM / 100) - (tripKm * 10));
+    display.println("km");
+  } else {  // no decimals
+    if (tripKm < 1000000) {
+      display.print(" ");
+    }
+    display.print(tripKm);
+    display.println("km");
+  }
+
+  // draw stopwatch from left to right at 2x scale
+  x = 0;
+  y = 46;
+  display.drawFastVLine(x + 0, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 1, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 0, y + 4, 6, WHITE);
+  display.drawFastVLine(x + 1, y + 4, 6, WHITE);
+
+  display.drawFastVLine(x + 2, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 3, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 2, y + 10, 2, WHITE);
+  display.drawFastVLine(x + 3, y + 10, 2, WHITE);
+
+  display.drawFastVLine(x + 4, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 5, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 4, y + 12, 2, WHITE);
+  display.drawFastVLine(x + 5, y + 12, 2, WHITE);
+
+  display.drawFastVLine(x + 6, y + 0, 8, WHITE);
+  display.drawFastVLine(x + 7, y + 0, 8, WHITE);
+  display.drawFastVLine(x + 6, y + 12, 2, WHITE);
+  display.drawFastVLine(x + 7, y + 12, 2, WHITE);
+
+  display.drawFastVLine(x + 8, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 9, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 8, y + 6, 2, WHITE);
+  display.drawFastVLine(x + 9, y + 6, 2, WHITE);
+  display.drawFastVLine(x + 8, y + 12, 2, WHITE);
+  display.drawFastVLine(x + 9, y + 12, 2, WHITE);
+
+  display.drawFastVLine(x + 10, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 11, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 10, y + 10, 2, WHITE);
+  display.drawFastVLine(x + 11, y + 10, 2, WHITE);
+
+  display.drawFastVLine(x + 12, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 13, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 12, y + 4, 6, WHITE);
+  display.drawFastVLine(x + 13, y + 4, 6, WHITE);
 
   unsigned long tripMinutes = tripSeconds / 60;
   unsigned long tripHours = tripMinutes / 60;
-  display.print("t: ");
   byte h = tripHours % 60;
+  display.print("  ");
   if (h <= 9) {
     display.print("0");
   }
@@ -240,24 +328,57 @@ void showCurrentTrip() {
 
   // TODO [#4]: simplify mathematics
   // TODO [#5]: extract avgSpeed calculation into global scope to be reused on current speed screen
-  float avgSpeed = (float)(((tripRotations * WHEEL_CIRCUMFERENCE) / tripSeconds) / 1000.0) * 3.6;
-  byte avgSpeedBase = (byte)avgSpeed;
-  display.print("v: ");
-  display.print(avgSpeedBase);
-  display.print(".");
-  display.print((byte)((avgSpeed * 10) - (avgSpeedBase * 10)));
-  display.print(" km/h");
-
-  drawMenuPosition(menuItem);
-
-  display.display();
+  // float avgSpeed = (float)(((tripRotations * WHEEL_CIRCUMFERENCE) / tripSeconds) / 1000.0) * 3.6;
+  // byte avgSpeedBase = (byte)avgSpeed;
+  // display.print("v: ");
+  // display.print(avgSpeedBase);
+  // display.print(".");
+  // display.print((byte)((avgSpeed * 10) - (avgSpeedBase * 10)));
+  // display.print(" km/h");
 }
 
 void showDateTime() {
   DateTime now = rtc.now();
 
-  display.clearDisplay();
-  display.setCursor(2, 5);
+  // draw clock from left to right at 2x scale
+  byte x = 2;
+  byte y = 40;
+  display.drawFastVLine(x + 0, y + 4, 6, WHITE);
+  display.drawFastVLine(x + 1, y + 4, 6, WHITE);
+
+  display.drawFastVLine(x + 2, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 3, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 2, y + 10, 2, WHITE);
+  display.drawFastVLine(x + 3, y + 10, 2, WHITE);
+
+  display.drawFastVLine(x + 4, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 5, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 4, y + 12, 2, WHITE);
+  display.drawFastVLine(x + 5, y + 12, 2, WHITE);
+
+  display.drawFastVLine(x + 6, y + 0, 8, WHITE);
+  display.drawFastVLine(x + 7, y + 0, 8, WHITE);
+  display.drawFastVLine(x + 6, y + 12, 2, WHITE);
+  display.drawFastVLine(x + 7, y + 12, 2, WHITE);
+
+  display.drawFastVLine(x + 8, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 9, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 8, y + 6, 2, WHITE);
+  display.drawFastVLine(x + 9, y + 6, 2, WHITE);
+  display.drawFastVLine(x + 8, y + 12, 2, WHITE);
+  display.drawFastVLine(x + 9, y + 12, 2, WHITE);
+
+  display.drawFastVLine(x + 10, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 11, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 10, y + 10, 2, WHITE);
+  display.drawFastVLine(x + 11, y + 10, 2, WHITE);
+
+  display.drawFastVLine(x + 12, y + 4, 6, WHITE);
+  display.drawFastVLine(x + 13, y + 4, 6, WHITE);
+
+  // print time
+
+  display.setCursor(20, 37);
   display.setTextSize(3);
 
   byte hour = now.hour();
@@ -274,36 +395,32 @@ void showDateTime() {
   }
   display.print(minute);
 
-  display.setTextSize(2);
-  display.setCursor(102, 12);
-  byte second = now.second();
-  if (second < 10) {
-    display.print("0");
-  }
-  display.print(second);
-
-  drawMenuPosition(menuItem);
-
-  display.display();
+  // display.setTextSize(2);
+  // display.setCursor(102, 42);
+  // byte second = now.second();
+  // if (second < 10) {
+  //   display.print("0");
+  // }
+  // display.print(second);
 }
 
 void updateScreen() {
+  display.clearDisplay();
+  showSpeed();
   switch (menuItem) {
     case 0: {
-      showSpeed();
-      break;
-    }
-    case 1: {
       showCurrentTrip();
       break;
     }
-    case 2: {
+    case 1: {
       showDateTime();
       break;
     }
     default:
       break;
   }
+  drawMenuPosition(menuItem);
+  display.display();
 }
 
 /**********************************
