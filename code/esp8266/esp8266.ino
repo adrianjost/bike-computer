@@ -324,8 +324,21 @@ void showCurrentTrip() {
 
   unsigned long tripM = (tripRotations * WHEEL_CIRCUMFERENCE) / 1000;
   unsigned long tripKm = tripM / 1000;
+  // TODO: digit extraction does not work if the first deximal place is a 0
+  // it get's lost because 04 is converted to the number 4.
+  // example: 1004m => 1.004km but 1.4km is printed
+  // that's the case, because 1004 - (1 * 1000) = 4 not 004 like it should be.
   display.print("  ");
   if (tripKm < 1) {
+    if (tripM < 10) {
+      display.print("     ");
+    } else if (tripM < 100) {
+      display.print("    ");
+    } else if (tripM < 1000) {
+      display.print("   ");
+    } else {
+      display.print("  ");
+    }
     display.print(tripM);
     display.println("m");
   } else if (tripKm < 100) {  // 3 decimal places
