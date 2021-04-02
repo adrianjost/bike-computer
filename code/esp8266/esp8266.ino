@@ -176,6 +176,75 @@ void fetchData() {
 // SCREENS
 //*************************
 
+// ICON HELPERS
+void drawIconClock(byte x, byte y) {
+  display.drawFastVLine(x + 0, y + 4, 6, WHITE);
+  display.drawFastVLine(x + 1, y + 4, 6, WHITE);
+
+  display.drawFastVLine(x + 2, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 3, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 2, y + 10, 2, WHITE);
+  display.drawFastVLine(x + 3, y + 10, 2, WHITE);
+
+  display.drawFastVLine(x + 4, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 5, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 4, y + 12, 2, WHITE);
+  display.drawFastVLine(x + 5, y + 12, 2, WHITE);
+
+  display.drawFastVLine(x + 6, y + 0, 8, WHITE);
+  display.drawFastVLine(x + 7, y + 0, 8, WHITE);
+  display.drawFastVLine(x + 6, y + 12, 2, WHITE);
+  display.drawFastVLine(x + 7, y + 12, 2, WHITE);
+
+  display.drawFastVLine(x + 8, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 9, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 8, y + 6, 2, WHITE);
+  display.drawFastVLine(x + 9, y + 6, 2, WHITE);
+  display.drawFastVLine(x + 8, y + 12, 2, WHITE);
+  display.drawFastVLine(x + 9, y + 12, 2, WHITE);
+
+  display.drawFastVLine(x + 10, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 11, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 10, y + 10, 2, WHITE);
+  display.drawFastVLine(x + 11, y + 10, 2, WHITE);
+
+  display.drawFastVLine(x + 12, y + 4, 6, WHITE);
+  display.drawFastVLine(x + 13, y + 4, 6, WHITE);
+}
+void drawIconStopwatch(byte x, byte y) {
+  drawIconClock(x, y);
+  display.drawFastVLine(x + 0, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 1, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 12, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 13, y + 0, 2, WHITE);
+}
+void drawIconDistance(byte x, byte y) {
+  display.drawPixel(x + 3, y + 0, WHITE);
+  display.drawPixel(x + 10, y + 0, WHITE);
+
+  display.drawFastHLine(x + 2, y + 1, 2, WHITE);
+  display.drawFastHLine(x + 10, y + 1, 2, WHITE);
+
+  display.drawFastHLine(x + 1, y + 2, 3, WHITE);
+  display.drawFastHLine(x + 10, y + 2, 3, WHITE);
+
+  display.drawFastHLine(x + 0, y + 3, 14, WHITE);
+  display.drawFastHLine(x + 0, y + 4, 14, WHITE);
+
+  display.drawFastHLine(x + 1, y + 5, 3, WHITE);
+  display.drawFastHLine(x + 10, y + 5, 3, WHITE);
+
+  display.drawFastHLine(x + 2, y + 6, 2, WHITE);
+  display.drawFastHLine(x + 10, y + 6, 2, WHITE);
+
+  display.drawPixel(x + 3, y + 7, WHITE);
+  display.drawPixel(x + 10, y + 7, WHITE);
+}
+void drawIconArrowUp(byte x, byte y) {
+}
+void drawIconArrowDown(byte x, byte y) {
+}
+
 void drawMenuPosition(byte position) {
   byte width = SCREEN_WIDTH / MENU_ITEMS;
   display.drawFastHLine(width * position, SCREEN_HEIGHT - 1, width, WHITE);
@@ -206,31 +275,7 @@ void showCurrentTrip() {
   display.setCursor(0, 30);
   display.setTextSize(2);
 
-  byte x;
-  byte y;
-  // draw arrow from top to bottom at 2x scale
-  x = 0;
-  y = 33;
-  display.drawPixel(x + 3, y + 0, WHITE);
-  display.drawPixel(x + 10, y + 0, WHITE);
-
-  display.drawFastHLine(x + 2, y + 1, 2, WHITE);
-  display.drawFastHLine(x + 10, y + 1, 2, WHITE);
-
-  display.drawFastHLine(x + 1, y + 2, 3, WHITE);
-  display.drawFastHLine(x + 10, y + 2, 3, WHITE);
-
-  display.drawFastHLine(x + 0, y + 3, 14, WHITE);
-  display.drawFastHLine(x + 0, y + 4, 14, WHITE);
-
-  display.drawFastHLine(x + 1, y + 5, 3, WHITE);
-  display.drawFastHLine(x + 10, y + 5, 3, WHITE);
-
-  display.drawFastHLine(x + 2, y + 6, 2, WHITE);
-  display.drawFastHLine(x + 10, y + 6, 2, WHITE);
-
-  display.drawPixel(x + 3, y + 7, WHITE);
-  display.drawPixel(x + 10, y + 7, WHITE);
+  drawIconDistance(0, 33);
 
   unsigned long tripM = (tripRotations * WHEEL_CIRCUMFERENCE) / 1000;
   unsigned long tripKm = tripM / 1000;
@@ -265,45 +310,7 @@ void showCurrentTrip() {
   }
 
   // draw stopwatch from left to right at 2x scale
-  x = 0;
-  y = 46;
-  display.drawFastVLine(x + 0, y + 0, 2, WHITE);
-  display.drawFastVLine(x + 1, y + 0, 2, WHITE);
-  display.drawFastVLine(x + 0, y + 4, 6, WHITE);
-  display.drawFastVLine(x + 1, y + 4, 6, WHITE);
-
-  display.drawFastVLine(x + 2, y + 2, 2, WHITE);
-  display.drawFastVLine(x + 3, y + 2, 2, WHITE);
-  display.drawFastVLine(x + 2, y + 10, 2, WHITE);
-  display.drawFastVLine(x + 3, y + 10, 2, WHITE);
-
-  display.drawFastVLine(x + 4, y + 0, 2, WHITE);
-  display.drawFastVLine(x + 5, y + 0, 2, WHITE);
-  display.drawFastVLine(x + 4, y + 12, 2, WHITE);
-  display.drawFastVLine(x + 5, y + 12, 2, WHITE);
-
-  display.drawFastVLine(x + 6, y + 0, 8, WHITE);
-  display.drawFastVLine(x + 7, y + 0, 8, WHITE);
-  display.drawFastVLine(x + 6, y + 12, 2, WHITE);
-  display.drawFastVLine(x + 7, y + 12, 2, WHITE);
-
-  display.drawFastVLine(x + 8, y + 0, 2, WHITE);
-  display.drawFastVLine(x + 9, y + 0, 2, WHITE);
-  display.drawFastVLine(x + 8, y + 6, 2, WHITE);
-  display.drawFastVLine(x + 9, y + 6, 2, WHITE);
-  display.drawFastVLine(x + 8, y + 12, 2, WHITE);
-  display.drawFastVLine(x + 9, y + 12, 2, WHITE);
-
-  display.drawFastVLine(x + 10, y + 2, 2, WHITE);
-  display.drawFastVLine(x + 11, y + 2, 2, WHITE);
-  display.drawFastVLine(x + 10, y + 10, 2, WHITE);
-  display.drawFastVLine(x + 11, y + 10, 2, WHITE);
-
-  display.drawFastVLine(x + 12, y + 0, 2, WHITE);
-  display.drawFastVLine(x + 13, y + 0, 2, WHITE);
-  display.drawFastVLine(x + 12, y + 4, 6, WHITE);
-  display.drawFastVLine(x + 13, y + 4, 6, WHITE);
-
+  drawIconStopwatch(0, 46);
   unsigned long tripMinutes = tripSeconds / 60;
   unsigned long tripHours = tripMinutes / 60;
   byte h = tripHours % 60;
@@ -339,43 +346,7 @@ void showCurrentTrip() {
 void showDateTime() {
   DateTime now = rtc.now();
 
-  // draw clock from left to right at 2x scale
-  byte x = 2;
-  byte y = 40;
-  display.drawFastVLine(x + 0, y + 4, 6, WHITE);
-  display.drawFastVLine(x + 1, y + 4, 6, WHITE);
-
-  display.drawFastVLine(x + 2, y + 2, 2, WHITE);
-  display.drawFastVLine(x + 3, y + 2, 2, WHITE);
-  display.drawFastVLine(x + 2, y + 10, 2, WHITE);
-  display.drawFastVLine(x + 3, y + 10, 2, WHITE);
-
-  display.drawFastVLine(x + 4, y + 0, 2, WHITE);
-  display.drawFastVLine(x + 5, y + 0, 2, WHITE);
-  display.drawFastVLine(x + 4, y + 12, 2, WHITE);
-  display.drawFastVLine(x + 5, y + 12, 2, WHITE);
-
-  display.drawFastVLine(x + 6, y + 0, 8, WHITE);
-  display.drawFastVLine(x + 7, y + 0, 8, WHITE);
-  display.drawFastVLine(x + 6, y + 12, 2, WHITE);
-  display.drawFastVLine(x + 7, y + 12, 2, WHITE);
-
-  display.drawFastVLine(x + 8, y + 0, 2, WHITE);
-  display.drawFastVLine(x + 9, y + 0, 2, WHITE);
-  display.drawFastVLine(x + 8, y + 6, 2, WHITE);
-  display.drawFastVLine(x + 9, y + 6, 2, WHITE);
-  display.drawFastVLine(x + 8, y + 12, 2, WHITE);
-  display.drawFastVLine(x + 9, y + 12, 2, WHITE);
-
-  display.drawFastVLine(x + 10, y + 2, 2, WHITE);
-  display.drawFastVLine(x + 11, y + 2, 2, WHITE);
-  display.drawFastVLine(x + 10, y + 10, 2, WHITE);
-  display.drawFastVLine(x + 11, y + 10, 2, WHITE);
-
-  display.drawFastVLine(x + 12, y + 4, 6, WHITE);
-  display.drawFastVLine(x + 13, y + 4, 6, WHITE);
-
-  // print time
+  drawIconClock(2, 40);
 
   display.setCursor(20, 37);
   display.setTextSize(3);
