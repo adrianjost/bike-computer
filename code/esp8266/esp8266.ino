@@ -29,7 +29,7 @@ Version: 1.0.0
 #define SCREEN_HEIGHT 64
 #define OLED_RESET 1
 
-#define MENU_ITEMS 3
+#define MENU_ITEMS 4
 #define LOW_POWER_DELAY 1000
 
 // config storage
@@ -82,6 +82,7 @@ RTC_DS3231 rtc;
 
 float speed = 0.0;
 float avgSpeed = 0.0;
+float maxSpeed = 0.0;
 unsigned int tripRotations = 0;
 unsigned long tripSeconds = 0;
 byte batteryLevel = 0;
@@ -182,6 +183,11 @@ void fetchData() {
   }
 
   avgSpeed = (float)(((tripRotations * WHEEL_CIRCUMFERENCE * 3.6) / (tripSeconds * 1000)));
+  // TODO: prevent single false values to update max speed
+  // a speed should only count, if surrunding values are similar.
+  // I can imagine comparing the last/next 3 readouts and check if the speed there was within 1-2km/h.
+  // If I reach max speed first and the next 2 readouts are similar but below, the first value should be used.
+  maxSpeed = max(maxSpeed, speed);
 }
 
 //*************************
@@ -476,6 +482,26 @@ void showAvgSpeed() {
   // display.println("km/h");
 }
 
+void showMaxSpeed() {
+  // avg speed
+  display.setTextSize(2);
+  display.setCursor(5, 30);
+  // TODO: implement and use max icon
+  display.print("MAX");
+  if (maxSpeed < 10) {
+    display.setCursor(60, 30);
+  } else if (maxSpeed < 100) {
+    display.setCursor(50, 30);
+  } else {
+    display.setCursor(40, 30);
+  }
+
+  display.print(maxSpeed, 1);
+  display.setCursor(102, 37);
+  display.setTextSize(1);
+  display.println("km/h");
+}
+
 void updateScreen() {
   display.clearDisplay();
   showSpeed();
@@ -490,6 +516,10 @@ void updateScreen() {
     }
     case 2: {
       showAvgSpeed();
+      break;
+    }
+    case 3: {
+      showMaxSpeed();
       break;
     }
     default:

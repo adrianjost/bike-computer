@@ -4,12 +4,12 @@
 
 - [x] current speed
 - [x] current time
-- [ ] max speed
+- [x] max speed
 - [ ] total distance
-- [ ] current trip
+- [x] current trip
   - [x] distance
-  - [ ] driving time
-  - [ ] avg speed
+  - [x] driving time
+  - [x] avg speed
 - [ ] wifi data export of all trips
 - [ ] auto-trip detection - save current trip on pause (10min timeout?)
 - [ ] setup of current time
