@@ -29,7 +29,7 @@ Version: 1.0.0
 #define SCREEN_HEIGHT 64
 #define OLED_RESET 1
 
-#define MENU_ITEMS 2
+#define MENU_ITEMS 3
 #define LOW_POWER_DELAY 1000
 
 // config storage
@@ -441,6 +441,15 @@ void showDateTime() {
   // display.print(second);
 }
 
+void showTemperature() {
+  float temp = rtc.getTemperature();
+
+  display.setCursor(14, 37);
+  display.setTextSize(2);
+  display.print(temp);
+  display.print(" C");
+}
+
 void updateScreen() {
   display.clearDisplay();
   showSpeed();
@@ -451,6 +460,10 @@ void updateScreen() {
     }
     case 1: {
       showDateTime();
+      break;
+    }
+    case 2: {
+      showTemperature();
       break;
     }
     default:
