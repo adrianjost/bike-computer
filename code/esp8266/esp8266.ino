@@ -5,7 +5,7 @@ Version: 1.0.0
 
 // DEVICE CONFIGURATION
 
-#define PIN_BUTTON 12
+#define PIN_BUTTON 3
 #define PIN_WAKEUP_INTERVAL 13
 #define PIN_SDA 2
 #define PIN_SCK 0
