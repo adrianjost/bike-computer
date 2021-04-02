@@ -81,6 +81,7 @@ RTC_DS3231 rtc;
 // char wifiPassword[32] = "";
 
 float speed = 0.0;
+float avgSpeed = 0.0;
 unsigned int tripRotations = 0;
 unsigned long tripSeconds = 0;
 byte batteryLevel = 0;
@@ -179,6 +180,8 @@ void fetchData() {
     lastTimeIncrease = now;
     stopped = false;
   }
+
+  avgSpeed = (float)(((tripRotations * WHEEL_CIRCUMFERENCE * 3.6) / (tripSeconds * 1000)));
 }
 
 //*************************
@@ -318,9 +321,11 @@ void showSpeed() {
   display.print("km/h");
 
   // draw arrow to compare current speed to avg speed from left to right
-  // TODO [#11]: draw correct arrow relative to avg speed
-  // drawIconArrowUp(106, 6);
-  drawIconArrowDown(106, 6);
+  if (speed > avgSpeed) {
+    drawIconArrowUp(106, 6);
+  } else if (speed < avgSpeed) {
+    drawIconArrowDown(106, 6);
+  }
 }
 
 void showCurrentTrip() {
@@ -377,7 +382,6 @@ void showCurrentTrip() {
     display.println("km");
   }
 
-  // draw stopwatch from left to right at 2x scale
   drawIconStopwatch(0, 46);
   unsigned long tripMinutes = tripSeconds / 60;
   unsigned long tripHours = tripMinutes / 60;
@@ -399,16 +403,6 @@ void showCurrentTrip() {
     display.print("0");
   }
   display.println(s);
-
-  // TODO [#4]: simplify mathematics
-  // TODO [#5]: extract avgSpeed calculation into global scope to be reused on current speed screen
-  // float avgSpeed = (float)(((tripRotations * WHEEL_CIRCUMFERENCE) / tripSeconds) / 1000.0) * 3.6;
-  // byte avgSpeedBase = (byte)avgSpeed;
-  // display.print("v: ");
-  // display.print(avgSpeedBase);
-  // display.print(".");
-  // display.print((byte)((avgSpeed * 10) - (avgSpeedBase * 10)));
-  // display.print(" km/h");
 }
 
 void showDateTime() {
@@ -442,13 +436,44 @@ void showDateTime() {
   // display.print(second);
 }
 
-void showTemperature() {
-  float temp = rtc.getTemperature();
-
-  display.setCursor(14, 37);
+void showAvgSpeed() {
+  // avg speed
   display.setTextSize(2);
-  display.print(temp);
-  display.print(" C");
+  display.setCursor(5, 30);
+  // TODO: implement and use avg icon
+  display.print("O");
+  if (avgSpeed < 10) {
+    display.setCursor(60, 30);
+  } else if (avgSpeed < 100) {
+    display.setCursor(50, 30);
+  } else {
+    display.setCursor(40, 30);  // I don't expect anyone to reach this ^^
+  }
+
+  display.print(avgSpeed, 1);
+  display.setCursor(102, 37);
+  display.setTextSize(1);
+  display.println("km/h");
+
+  // median speed
+  // TODO: calculate median speed
+  // use an array with all possible speed values and count how often they appeared
+  // eventually a precision without decimal places is ok to save memory.
+  // TODO: implement and use icon for median speed
+  // display.setTextSize(2);
+  // display.setCursor(5, 47);
+  // display.print("M");
+  // if (avgSpeed < 10) {
+  //   display.setCursor(60, 47);
+  // } else if (avgSpeed < 100) {
+  //   display.setCursor(50, 47);
+  // } else {
+  //   display.setCursor(40, 47);  // I don't expect anyone to reach this ^^
+  // }
+  // display.print(avgSpeed, 1);
+  // display.setCursor(102, 54);
+  // display.setTextSize(1);
+  // display.println("km/h");
 }
 
 void updateScreen() {
@@ -464,7 +489,7 @@ void updateScreen() {
       break;
     }
     case 2: {
-      showTemperature();
+      showAvgSpeed();
       break;
     }
     default:
@@ -726,11 +751,6 @@ void setup() {
   wifi_fpm_open();
   wifi_fpm_do_sleep(0xFFFFFFF);
   wifiActive = false;
-  display.setTextSize(1);
-  display.print("NO WIFI MODE");
-  display.display();
-
-  delay(1000);
 }
 
 //*************************
