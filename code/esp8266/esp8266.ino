@@ -311,7 +311,7 @@ void showSpeed() {
   display.print("km/h");
 
   // draw arrow to compare current speed to avg speed from left to right
-  // TODO: draw correct arrow relative to avg speed
+  // TODO [$60673398f02eac000b7f074b]: draw correct arrow relative to avg speed
   // drawIconArrowUp(106, 6);
   drawIconArrowDown(106, 6);
 }
@@ -324,7 +324,7 @@ void showCurrentTrip() {
 
   unsigned long tripM = (tripRotations * WHEEL_CIRCUMFERENCE) / 1000;
   unsigned long tripKm = tripM / 1000;
-  // TODO: digit extraction does not work if the first deximal place is a 0
+  // TODO [$60673398f02eac000b7f074c]: digit extraction does not work if the first deximal place is a 0
   // it get's lost because 04 is converted to the number 4.
   // example: 1004m => 1.004km but 1.4km is printed
   // that's the case, because 1004 - (1 * 1000) = 4 not 004 like it should be.
