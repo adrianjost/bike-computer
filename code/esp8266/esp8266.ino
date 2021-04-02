@@ -241,8 +241,48 @@ void drawIconDistance(byte x, byte y) {
   display.drawPixel(x + 10, y + 7, WHITE);
 }
 void drawIconArrowUp(byte x, byte y) {
+  display.drawFastVLine(x + 0, y + 6, 2, WHITE);
+  display.drawFastVLine(x + 1, y + 6, 2, WHITE);
+
+  display.drawFastVLine(x + 2, y + 4, 2, WHITE);
+  display.drawFastVLine(x + 3, y + 4, 2, WHITE);
+
+  display.drawFastVLine(x + 4, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 5, y + 2, 2, WHITE);
+
+  display.drawFastVLine(x + 6, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 7, y + 0, 2, WHITE);
+
+  display.drawFastVLine(x + 8, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 9, y + 2, 2, WHITE);
+
+  display.drawFastVLine(x + 10, y + 4, 2, WHITE);
+  display.drawFastVLine(x + 11, y + 4, 2, WHITE);
+
+  display.drawFastVLine(x + 12, y + 6, 2, WHITE);
+  display.drawFastVLine(x + 13, y + 6, 2, WHITE);
 }
 void drawIconArrowDown(byte x, byte y) {
+  display.drawFastVLine(x + 0, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 1, y + 0, 2, WHITE);
+
+  display.drawFastVLine(x + 2, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 3, y + 2, 2, WHITE);
+
+  display.drawFastVLine(x + 4, y + 4, 2, WHITE);
+  display.drawFastVLine(x + 5, y + 4, 2, WHITE);
+
+  display.drawFastVLine(x + 6, y + 6, 2, WHITE);
+  display.drawFastVLine(x + 7, y + 6, 2, WHITE);
+
+  display.drawFastVLine(x + 8, y + 4, 2, WHITE);
+  display.drawFastVLine(x + 9, y + 4, 2, WHITE);
+
+  display.drawFastVLine(x + 10, y + 2, 2, WHITE);
+  display.drawFastVLine(x + 11, y + 2, 2, WHITE);
+
+  display.drawFastVLine(x + 12, y + 0, 2, WHITE);
+  display.drawFastVLine(x + 13, y + 0, 2, WHITE);
 }
 
 void drawMenuPosition(byte position) {
@@ -269,6 +309,11 @@ void showSpeed() {
   display.setCursor(102, 20);
   display.setTextSize(1);
   display.print("km/h");
+
+  // draw arrow to compare current speed to avg speed from left to right
+  // TODO: draw correct arrow relative to avg speed
+  // drawIconArrowUp(106, 6);
+  drawIconArrowDown(106, 6);
 }
 
 void showCurrentTrip() {
