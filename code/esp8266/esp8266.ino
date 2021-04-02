@@ -329,7 +329,7 @@ void showCurrentTrip() {
 
   drawIconDistance(0, 33);
 
-  // TODO [$606766c752ae960008836f0d]: cleanup this part
+  // TODO [#13]: cleanup this part
   // I don't like
   // - [ ] the split between the decimal places (would prefer a function to calculate it)
   // - [ ] the empty spaces as placeholders
