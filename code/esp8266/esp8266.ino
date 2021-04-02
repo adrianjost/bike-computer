@@ -213,11 +213,9 @@ void showCurrentTrip() {
   display.setTextSize(1);
 
   unsigned long tripM = (tripRotations * WHEEL_CIRCUMFERENCE) / 1000;
-  unsigned long tripKm = tripM / 1000;
   display.print("d: ");
-  // TODO [#10]: use km or add switch between m/km depending on distance
-  display.print(tripM);
-  display.println(" m");
+  display.print((float)(tripM) / 1000);
+  display.println(" km");
 
   unsigned long tripMinutes = tripSeconds / 60;
   unsigned long tripHours = tripMinutes / 60;
