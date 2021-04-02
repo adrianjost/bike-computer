@@ -232,8 +232,7 @@ void showCurrentTrip() {
   display.drawPixel(x + 3, y + 7, WHITE);
   display.drawPixel(x + 10, y + 7, WHITE);
 
-  // unsigned long tripM = (tripRotations * WHEEL_CIRCUMFERENCE) / 1000;
-  unsigned long tripM = 87654321;
+  unsigned long tripM = (tripRotations * WHEEL_CIRCUMFERENCE) / 1000;
   unsigned long tripKm = tripM / 1000;
   display.print("  ");
   if (tripKm < 1) {
