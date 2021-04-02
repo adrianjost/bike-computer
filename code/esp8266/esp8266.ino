@@ -308,11 +308,9 @@ void showSpeed() {
     display.setCursor(24, 0);
     display.print(base);
   } else {
-    byte rest = ((byte)(speed * 10)) - (base * 10);
+    // byte rest = ((byte)(speed * 10)) - (base * 10);
     display.setCursor(base > 9 ? 0 : 24, 0);
-    display.print(base);
-    display.print(".");
-    display.print(rest);
+    display.print(speed, 1);
   }
 
   display.setCursor(102, 20);
@@ -331,13 +329,14 @@ void showCurrentTrip() {
 
   drawIconDistance(0, 33);
 
+  // TODO: cleanup this part
+  // I don't like
+  // - [ ] the split between the decimal places (would prefer a function to calculate it)
+  // - [ ] the empty spaces as placeholders
+  // - [ ] and that m/km are not located near the print of the actual number
   unsigned long tripM = (tripRotations * WHEEL_CIRCUMFERENCE) / 1000;
   unsigned long tripKm = tripM / 1000;
-  // TODO [#12]: digit extraction does not work if the first deximal place is a 0
-  // it get's lost because 04 is converted to the number 4.
-  // example: 1004m => 1.004km but 1.4km is printed
-  // that's the case, because 1004 - (1 * 1000) = 4 not 004 like it should be.
-  display.print("  ");
+  display.print("  ");  // space for icon
   if (tripKm < 1) {
     if (tripM < 10) {
       display.print("     ");
@@ -350,29 +349,31 @@ void showCurrentTrip() {
     }
     display.print(tripM);
     display.println("m");
-  } else if (tripKm < 100) {  // 3 decimal places
-    if (tripKm < 10) {
-      display.print(" ");
+  } else {
+    if (tripKm < 10 || (tripKm >= 10000 && tripKm < 100000)) {
+      display.print(" ");  // pad left to keep km right aligned
     }
     display.print(tripKm);
-    display.print(".");
-    display.print(tripM - (tripKm * 1000));
-    display.println("km");
-  } else if (tripKm < 1000) {  // 2 decimal places
-    display.print(tripKm);
-    display.print(".");
-    display.print((tripM / 10) - (tripKm * 100));
-    display.println("km");
-  } else if (tripKm < 10000) {  // 1 decimal place
-    display.print(tripKm);
-    display.print(".");
-    display.print((tripM / 100) - (tripKm * 10));
-    display.println("km");
-  } else {  // no decimals
-    if (tripKm < 1000000) {
-      display.print(" ");
+    int kmRest = tripM - (tripKm * 1000);
+    if (tripKm < 100) {  // 3 decimal
+      display.print(".");
+      if (kmRest < 10) {
+        display.print("0");
+      }
+      if (kmRest < 100) {
+        display.print("0");
+      }
+      display.print(kmRest);
+    } else if (tripKm < 1000) {  // 2 decimal
+      display.print(".");
+      if (kmRest < 100) {
+        display.print("0");
+      }
+      display.print(kmRest / 10);
+    } else if (tripKm < 10000) {  // 1 decimal
+      display.print(".");
+      display.print(kmRest / 100);
     }
-    display.print(tripKm);
     display.println("km");
   }
 
