@@ -147,6 +147,8 @@ void handleButtonInterrupt() {
 // float speed = 0.0;
 // unsigned int tripRotations = 0;
 
+bool stopped = true;
+unsigned long lastTimeIncrease = 0;
 void fetchData() {
   Wire.requestFrom(ATTINY_ADDRESS, 2);
   byte rPer20s = 0;
@@ -166,9 +168,16 @@ void fetchData() {
   speed = (float)(rPer20s * WHEEL_CIRCUMFERENCE * 3.6) / 20000.0;
   batteryLevel = batteryAndRotationCount & B00001111;
   tripRotations += ((batteryAndRotationCount & B11110000) >> 4);
-  if (rPer20s != 0) {
-    // TODO [#9]: use real seconds from RTC instead of this unprecise method, the approach might need an adjustment, because the precision of the clock is limited to seconds. Using a longer period should be considered.
-    tripSeconds++;
+
+  unsigned long now = rtc.now().secondstime();
+  if (stopped == false) {
+    tripSeconds += now - lastTimeIncrease;
+  }
+  if (rPer20s == 0) {
+    stopped = true;
+  } else {
+    lastTimeIncrease = now;
+    stopped = false;
   }
 }
 
