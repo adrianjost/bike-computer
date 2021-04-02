@@ -183,7 +183,7 @@ void fetchData() {
   }
 
   avgSpeed = (float)(((tripRotations * WHEEL_CIRCUMFERENCE * 3.6) / (tripSeconds * 1000)));
-  // TODO: prevent single false values to update max speed
+  // TODO [$6067721fde03710007deb075]: prevent single false values to update max speed
   // a speed should only count, if surrunding values are similar.
   // I can imagine comparing the last/next 3 readouts and check if the speed there was within 1-2km/h.
   // If I reach max speed first and the next 2 readouts are similar but below, the first value should be used.
@@ -486,7 +486,7 @@ void showMaxSpeed() {
   // avg speed
   display.setTextSize(2);
   display.setCursor(5, 30);
-  // TODO: implement and use max icon
+  // TODO [$6067721fde03710007deb076]: implement and use max icon
   display.print("MAX");
   if (maxSpeed < 10) {
     display.setCursor(60, 30);
