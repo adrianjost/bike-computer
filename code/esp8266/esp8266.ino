@@ -828,7 +828,7 @@ void loop() {
   if (menuButtonTriggered == true) {
     menuButtonTriggered = false;
     menuItem = (menuItem + 1) % MENU_ITEMS;
-    // TODO [$606837c8b336f200098b1469]: save state before shutdown
+    // TODO [#21]: save state before shutdown
     // saveState();
   }
   fetchData();
