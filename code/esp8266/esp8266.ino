@@ -728,7 +728,7 @@ void updateScreen() {
 // }
 
 void saveState() {
-  // TODO [$606835d553d43200082ebaef]: implement EEPROM wear leveling lib
+  // TODO [#20]: implement EEPROM wear leveling lib
   EEPROM.put(EEPROM_ADDR_TRIP_ROTATIONS, tripRotations);
   EEPROM.put(EEPROM_ADDR_TRIP_SECONDS, tripSeconds);
   EEPROM.put(EEPROM_ADDR_TOTAL_ROTATIONS, totalRotations);
