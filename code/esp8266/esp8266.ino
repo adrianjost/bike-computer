@@ -83,7 +83,7 @@ RTC_DS3231 rtc;
 float speed = 0.0;
 float avgSpeed = 0.0;
 float maxSpeed = 0.0;
-// TODO [$6068151aacf5f300091985c1]: save data on some kind of storage and restore values on boot
+// TODO [#19]: save data on some kind of storage and restore values on boot
 unsigned int tripRotations = 0;
 unsigned int tripSeconds = 0;
 unsgined int totalRotations = 0;
