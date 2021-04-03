@@ -5,7 +5,7 @@
 - [x] current speed
 - [x] current time
 - [x] max speed
-- [ ] total distance
+- [x] total distance
 - [x] current trip
   - [x] distance
   - [x] driving time
