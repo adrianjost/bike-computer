@@ -10,10 +10,13 @@ Version: 1.0.0
 #define PIN_SDA 2
 #define PIN_SCK 0
 
-// Attiny
-#define ATTINY_ADDRESS 0x4
 // TODO [#8]: make WHEEL_CIRCUMFERENCE adjustable by user - step 1: use a variable
 #define WHEEL_CIRCUMFERENCE 2000
+
+#define MAX_SPEED_TOLERANCE_KMH 5
+
+// Attiny
+#define ATTINY_ADDRESS 0x4
 
 // HIGH, LOW
 #define BUTTON_PRESSED LOW
@@ -161,6 +164,8 @@ void handleButtonInterrupt() {
 
 bool stopped = true;
 unsigned long lastTimeIncrease = 0;
+float lastSpeeds[] = {0.0, 0.0, 0.0};
+byte lastSpeedIndex = 0;
 void fetchData() {
   Wire.requestFrom(ATTINY_ADDRESS, 2);
   byte rPer20s = 0;
@@ -183,6 +188,9 @@ void fetchData() {
   tripRotations += newRotations;
   totalRotations += newRotations;
 
+  lastSpeedIndex = (lastSpeedIndex + 1) % 3;
+  lastSpeeds[lastSpeedIndex] = speed;
+
   unsigned long now = rtc.now().secondstime();
   if (stopped == false) {
     tripSeconds += now - lastTimeIncrease;
@@ -195,12 +203,14 @@ void fetchData() {
   }
 
   avgSpeed = (float)(((tripRotations * WHEEL_CIRCUMFERENCE * 3.6) / (tripSeconds * 1000)));
-  // TODO [#17]: prevent single false values to update max speed
-  // a speed should only count, if surrunding values are similar.
-  // I can imagine comparing the last/next 3 readouts and check if the speed there was within 1-2km/h.
-  // If I reach max speed first and the next 2 readouts are similar but below, the first value should be used.
-  if (speed > maxSpeed) {
-    maxSpeed = speed;
+
+  float lastSpeedsMax = max(max(lastSpeeds[0], lastSpeeds[1]), lastSpeeds[2]);
+  if (lastSpeedsMax > maxSpeed) {
+    float lastSpeedsMin = min(min(lastSpeeds[0], lastSpeeds[1]), lastSpeeds[2]);
+    // max speed only counts, if the min of the last 3 values is within MAX_SPEED_TOLERANCE_KMH to the max
+    if ((lastSpeedsMax - lastSpeedsMin) <= MAX_SPEED_TOLERANCE_KMH) {
+      maxSpeed = lastSpeedsMax;
+    }
   }
 }
 
