@@ -798,7 +798,7 @@ void setup() {
 
   setupDisplay();
 
-  setupEEPROM();
+  // setupEEPROM();
 
   // setupFilesystem();
 
@@ -828,7 +828,8 @@ void loop() {
   if (menuButtonTriggered == true) {
     menuButtonTriggered = false;
     menuItem = (menuItem + 1) % MENU_ITEMS;
-    saveState();
+    // TODO: save state before shutdown
+    // saveState();
   }
   fetchData();
   updateScreen();
