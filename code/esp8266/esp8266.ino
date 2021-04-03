@@ -83,8 +83,10 @@ RTC_DS3231 rtc;
 float speed = 0.0;
 float avgSpeed = 0.0;
 float maxSpeed = 0.0;
+// TODO: save data on some kind of storage and restore values on boot
 unsigned int tripRotations = 0;
-unsigned long tripSeconds = 0;
+unsigned int tripSeconds = 0;
+unsgined int totalRotations = 0;
 byte batteryLevel = 0;
 
 volatile byte menuItem = 0;
@@ -169,7 +171,9 @@ void fetchData() {
 
   speed = (float)(rPer20s * WHEEL_CIRCUMFERENCE * 3.6) / 20000.0;
   batteryLevel = batteryAndRotationCount & B00001111;
-  tripRotations += ((batteryAndRotationCount & B11110000) >> 4);
+  byte newRotations = ((batteryAndRotationCount & B11110000) >> 4);
+  tripRotations += newRotations;
+  totalRotations += newRotations;
 
   unsigned long now = rtc.now().secondstime();
   if (stopped == false) {
