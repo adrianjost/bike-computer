@@ -113,3 +113,4 @@ void printDirectory(File dir, int numTabs) {
 - https://simple-circuit.com/arduino-sd-card-interfacing-example/
 - [SD-Card Power Consumption](https://forum.arduino.cc/index.php?topic=132303.0)
 - [ESP8266 Pin Functions](https://i2.wp.com/randomnerdtutorials.com/wp-content/uploads/2019/05/ESP8266-WeMos-D1-Mini-pinout-gpio-pin.png?quality=100&strip=all&ssl=1)
+- [EEPROM Wear Leveling Lib](https://github.com/xoseperez/eeprom_rotate)

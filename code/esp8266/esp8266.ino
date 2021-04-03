@@ -32,6 +32,14 @@ Version: 1.0.0
 #define MENU_ITEMS 4
 #define LOW_POWER_DELAY 1000
 
+// EEPROM Locations
+#define EEPROM_SIZE 32
+#define EEPROM_ADDR_TRIP_ROTATIONS 0
+#define EEPROM_ADDR_TRIP_SECONDS 4
+#define EEPROM_ADDR_TOTAL_ROTATIONS 8
+#define EEPROM_ADDR_SPEED_AVG 12
+#define EEPROM_ADDR_SPEED_MAX 16
+
 // config storage
 #define PATH_CONFIG_WIFI "/config.json"
 
@@ -44,6 +52,9 @@ Version: 1.0.0
 // Website Communication
 // #include <ArduinoJson.h>  // 6.16.1 - Benoit Blanchon
 #include <ESP8266WiFi.h>  // 1.0.0 - Ivan Grokhotkov
+
+// Save Data
+#include <EEPROM.h>
 
 // OTA Updates
 // #include <ArduinoOTA.h>
@@ -83,13 +94,13 @@ RTC_DS3231 rtc;
 float speed = 0.0;
 float avgSpeed = 0.0;
 float maxSpeed = 0.0;
-// TODO [#19]: save data on some kind of storage and restore values on boot
-unsigned int tripRotations = 0;
-unsigned int tripSeconds = 0;
-unsgined int totalRotations = 0;
+unsigned long tripRotations = 0;
+unsigned long tripSeconds = 0;
+unsigned long totalRotations = 0;
 byte batteryLevel = 0;
 
-volatile byte menuItem = 0;
+bool menuButtonTriggered = false;
+byte menuItem = 0;
 volatile unsigned long lastButtonInterrupt = 0;
 
 /**********************************
@@ -144,12 +155,9 @@ void handleButtonInterrupt() {
   if (interruptTime - lastButtonInterrupt < 200) {
     return;
   }
-  menuItem = (menuItem + 1) % MENU_ITEMS;
+  menuButtonTriggered = true;
   lastButtonInterrupt = interruptTime;
 }
-
-// float speed = 0.0;
-// unsigned int tripRotations = 0;
 
 bool stopped = true;
 unsigned long lastTimeIncrease = 0;
@@ -191,7 +199,9 @@ void fetchData() {
   // a speed should only count, if surrunding values are similar.
   // I can imagine comparing the last/next 3 readouts and check if the speed there was within 1-2km/h.
   // If I reach max speed first and the next 2 readouts are similar but below, the first value should be used.
-  maxSpeed = max(maxSpeed, speed);
+  if (speed > maxSpeed) {
+    maxSpeed = speed;
+  }
 }
 
 //*************************
@@ -717,6 +727,27 @@ void updateScreen() {
 // #endif
 // }
 
+void saveState() {
+  // TODO: implement EEPROM wear leveling lib
+  EEPROM.put(EEPROM_ADDR_TRIP_ROTATIONS, tripRotations);
+  EEPROM.put(EEPROM_ADDR_TRIP_SECONDS, tripSeconds);
+  EEPROM.put(EEPROM_ADDR_TOTAL_ROTATIONS, totalRotations);
+  EEPROM.put(EEPROM_ADDR_SPEED_AVG, avgSpeed);
+  EEPROM.put(EEPROM_ADDR_SPEED_MAX, maxSpeed);
+
+  EEPROM.commit();
+}
+
+void setupEEPROM() {
+  EEPROM.begin(EEPROM_SIZE);
+
+  EEPROM.get(EEPROM_ADDR_TRIP_ROTATIONS, tripRotations);
+  EEPROM.get(EEPROM_ADDR_TRIP_SECONDS, tripSeconds);
+  EEPROM.get(EEPROM_ADDR_TOTAL_ROTATIONS, totalRotations);
+  EEPROM.get(EEPROM_ADDR_SPEED_AVG, avgSpeed);
+  EEPROM.get(EEPROM_ADDR_SPEED_MAX, maxSpeed);
+}
+
 void setupDisplay() {
   Wire.begin(PIN_SDA, PIN_SCK);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -767,6 +798,8 @@ void setup() {
 
   setupDisplay();
 
+  setupEEPROM();
+
   // setupFilesystem();
 
 #ifdef DEBUG
@@ -792,6 +825,11 @@ void setup() {
 //*************************
 
 void loop() {
+  if (menuButtonTriggered == true) {
+    menuButtonTriggered = false;
+    menuItem = (menuItem + 1) % MENU_ITEMS;
+    saveState();
+  }
   fetchData();
   updateScreen();
   sleep();
